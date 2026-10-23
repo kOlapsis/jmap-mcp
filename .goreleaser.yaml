@@ -2,10 +2,6 @@
 version: 2
 project_name: jmap-mcp
 
-before:
-  hooks:
-    - go mod tidy
-
 builds:
   - id: jmap-mcp
     main: .

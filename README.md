@@ -116,6 +116,9 @@ curl https://mcp.example.com/healthz
 Traefik sets the `X-Forwarded-*` headers from which the bridge derives its public URL. Set
 `JMAP_MCP_PUBLIC_URL` only if your proxy does not send them.
 
+Image tags: `X.Y.Z`, `X.Y`, `X` and `latest` for releases, `main` and `sha-<commit>` for the
+latest build of the main branch. Both are built by GitHub Actions and pushed to ghcr.io.
+
 **Without Traefik**, [`deploy/caddy`](deploy/caddy) has a Caddy setup that obtains the certificate
 itself:
 
@@ -371,7 +374,8 @@ made, checked against the actual software in October 2026:
 
 ## Releasing
 
-Maintainers push a `vX.Y.Z` tag. The release workflow runs GoReleaser (archives, checksums, SBOMs,
+Every push to `main` builds the image and pushes `ghcr.io/kolapsis/jmap-mcp:main` (workflow
+`image.yml`). Maintainers publish a version by pushing a `vX.Y.Z` tag. The release workflow runs GoReleaser (archives, checksums, SBOMs,
 multi-arch image on GHCR with semver and `latest` tags, Homebrew cask when `HOMEBREW_TAP_TOKEN` is
 set), builds and uploads `jmap-mcp.mcpb`, then publishes `server.json` to the MCP registry with
 GitHub OIDC.

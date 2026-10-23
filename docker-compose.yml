@@ -3,7 +3,7 @@
 # resolver name and the network name with yours, then: docker compose up -d
 services:
   jmap-mcp:
-    image: ghcr.io/kolapsis/jmap-mcp:latest
+    image: ghcr.io/kolapsis/jmap-mcp:latest   # or :main for the latest build of the main branch
     restart: unless-stopped
     volumes:
       - jmap-mcp-data:/data

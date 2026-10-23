@@ -56,6 +56,8 @@ All notable changes to this project are documented here. The format follows
   `healthcheck` command), Docker Compose example for Traefik, Caddy example,
   systemd unit, GoReleaser configuration (archives, checksums, SBOMs, image,
   Homebrew cask), Claude Desktop bundle (`.mcpb`), `server.json` for the MCP
-  registry, CI and release workflows, Dependabot.
+  registry, CI and release workflows, an image workflow pushing
+  `ghcr.io/kolapsis/jmap-mcp:main` on every change of the main branch,
+  Dependabot.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.

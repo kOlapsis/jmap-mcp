@@ -219,6 +219,9 @@ func mcpStatus(t *testing.T, b *bridge, token string, header http.Header) (int, 
 	for k, v := range header {
 		req.Header[k] = v
 	}
+	if h := header.Get("Host"); h != "" {
+		req.Host = h
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -290,6 +293,11 @@ func TestAuthorizationServer(t *testing.T) {
 	if status, _ := mcpStatus(t, b, "jmcp_at_forged", nil); status != http.StatusUnauthorized {
 		t.Fatalf("forged token accepted: %d", status)
 	}
+	b.srv.cfg.PublicURL = b.http.URL
+	if status, _ := mcpStatus(t, b, access, http.Header{"Host": {"mcp.example.com"}}); status != http.StatusOK {
+		t.Fatalf("request from a local reverse proxy with a public Host: %d", status)
+	}
+	b.srv.cfg.PublicURL = ""
 
 	status, rotated := c.token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {tok["refresh_token"].(string)}})
 	if status != http.StatusOK || rotated["refresh_token"] == tok["refresh_token"] {

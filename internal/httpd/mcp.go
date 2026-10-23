@@ -32,7 +32,8 @@ import (
 const baseHeader = "X-Jmap-Mcp-Base"
 
 func (s *Server) mcpHandler() http.Handler {
-	h := mcp.NewStreamableHTTPHandler(s.serverFor, &mcp.StreamableHTTPOptions{SessionTimeout: 30 * time.Minute, Logger: s.log})
+	// The SDK's DNS-rebinding guard would reject a local reverse proxy (127.0.0.1 with a public Host); bearer tokens already prevent rebinding attacks.
+	h := mcp.NewStreamableHTTPHandler(s.serverFor, &mcp.StreamableHTTPOptions{SessionTimeout: 30 * time.Minute, Logger: s.log, DisableLocalhostProtection: true})
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		base := s.base(r)
 		r.Header.Set(baseHeader, base)
