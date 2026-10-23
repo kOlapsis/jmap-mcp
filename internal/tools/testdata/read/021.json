@@ -1,0 +1,7 @@
+{
+  "method": "GET",
+  "path": "/jmap/download/c/cp3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaaxoqiya/dot.png",
+  "status": 200,
+  "content_type": "image/png",
+  "body": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+}

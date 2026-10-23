@@ -1,0 +1,117 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "filter": {
+            "from": "news@example.org"
+          },
+          "sort": [
+            {
+              "property": "receivedAt",
+              "isAscending": false
+            }
+          ],
+          "limit": 20,
+          "calculateTotal": true
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "from",
+            "to",
+            "subject",
+            "preview",
+            "hasAttachment",
+            "attachments",
+            "size"
+          ],
+          "bodyProperties": [
+            "blobId"
+          ],
+          "#ids": {
+            "resultOf": "0",
+            "name": "Email/query",
+            "path": "/ids"
+          }
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "queryState": "sa2",
+          "canCalculateChanges": true,
+          "position": 0,
+          "ids": [
+            "iaaaaac"
+          ],
+          "total": 1
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sa2",
+          "list": [
+            {
+              "id": "iaaaaac",
+              "threadId": "c",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-06T10:00:00Z",
+              "from": [
+                {
+                  "name": "News",
+                  "email": "news@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": null,
+                  "email": "alice@example.test"
+                }
+              ],
+              "subject": "Weekly newsletter",
+              "preview": " NewsletterHello \u0026 welcome to this week.\nFirst itemSecond item Read more",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 457
+            }
+          ],
+          "notFound": []
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "9af353d7"
+  }
+}

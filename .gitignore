@@ -1,0 +1,5 @@
+/jmap-mcp
+/dist/
+*.test
+*.out
+/prompt.md

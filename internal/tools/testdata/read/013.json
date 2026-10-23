@@ -1,0 +1,145 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "ids": [
+            "iaaaaac"
+          ],
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "sentAt",
+            "from",
+            "to",
+            "cc",
+            "bcc",
+            "replyTo",
+            "sender",
+            "subject",
+            "messageId",
+            "inReplyTo",
+            "references",
+            "textBody",
+            "htmlBody",
+            "attachments",
+            "bodyValues",
+            "size",
+            "hasAttachment",
+            "preview"
+          ],
+          "bodyProperties": [
+            "partId",
+            "blobId",
+            "size",
+            "name",
+            "type",
+            "charset",
+            "disposition",
+            "cid"
+          ],
+          "fetchTextBodyValues": true,
+          "fetchHTMLBodyValues": true,
+          "maxBodyValueBytes": 41024
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sa2",
+          "list": [
+            {
+              "id": "iaaaaac",
+              "threadId": "c",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-06T10:00:00Z",
+              "sentAt": "2026-10-06T10:00:00Z",
+              "from": [
+                {
+                  "name": "News",
+                  "email": "news@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": null,
+                  "email": "alice@example.test"
+                }
+              ],
+              "cc": null,
+              "bcc": null,
+              "replyTo": null,
+              "sender": null,
+              "subject": "Weekly newsletter",
+              "messageId": [
+                "news-1@example.org"
+              ],
+              "inReplyTo": null,
+              "references": null,
+              "textBody": [
+                {
+                  "partId": "0",
+                  "blobId": "che9nyo7tkxo3tvzhurpm3npwefyfa32yrvzyv3kppqwj30t1fc22aqaaldadayc",
+                  "size": 259,
+                  "name": null,
+                  "type": "text/html",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "htmlBody": [
+                {
+                  "partId": "0",
+                  "blobId": "che9nyo7tkxo3tvzhurpm3npwefyfa32yrvzyv3kppqwj30t1fc22aqaaldadayc",
+                  "size": 259,
+                  "name": null,
+                  "type": "text/html",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "attachments": [],
+              "bodyValues": {
+                "0": {
+                  "isEncodingProblem": false,
+                  "isTruncated": false,
+                  "value": "\u003chtml\u003e\u003chead\u003e\u003cstyle\u003ep{color:red}\u003c/style\u003e\u003cscript\u003ealert(1)\u003c/script\u003e\u003c/head\u003e\n\u003cbody\u003e\u003ch1\u003eNewsletter\u003c/h1\u003e\u003cp\u003eHello \u0026amp; welcome to \u003cb\u003ethis week\u003c/b\u003e.\u003c/p\u003e\u003cul\u003e\u003cli\u003eFirst item\u003c/li\u003e\u003cli\u003eSecond item\u003c/li\u003e\u003c/ul\u003e\n\u003ca href=\"https://example.org/read\"\u003eRead more\u003c/a\u003e\u003c/body\u003e\u003c/html\u003e\n"
+                }
+              },
+              "size": 457,
+              "hasAttachment": false,
+              "preview": " NewsletterHello \u0026 welcome to this week.\nFirst itemSecond item Read more"
+            }
+          ],
+          "notFound": []
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "9af353d7"
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "filter": {
+            "hasAttachment": true
+          },
+          "sort": [
+            {
+              "property": "receivedAt",
+              "isAscending": false
+            }
+          ],
+          "limit": 20,
+          "calculateTotal": true
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "from",
+            "to",
+            "subject",
+            "preview",
+            "hasAttachment",
+            "attachments",
+            "size"
+          ],
+          "bodyProperties": [
+            "blobId"
+          ],
+          "#ids": {
+            "resultOf": "0",
+            "name": "Email/query",
+            "path": "/ids"
+          }
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "queryState": "sa2",
+          "canCalculateChanges": true,
+          "position": 0,
+          "ids": [
+            "uaaaaaf"
+          ],
+          "total": 1
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sa2",
+          "list": [
+            {
+              "id": "uaaaaaf",
+              "threadId": "f",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-08T12:00:00Z",
+              "from": [
+                {
+                  "name": "Erin",
+                  "email": "erin@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": null,
+                  "email": "alice@example.test"
+                }
+              ],
+              "subject": "Notes and picture",
+              "preview": "See the attached notes.",
+              "hasAttachment": true,
+              "attachments": [
+                {
+                  "blobId": "ch3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaawsaglq"
+                },
+                {
+                  "blobId": "cp3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaaxoqiya"
+                }
+              ],
+              "size": 711
+            }
+          ],
+          "notFound": []
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "9af353d7"
+  }
+}

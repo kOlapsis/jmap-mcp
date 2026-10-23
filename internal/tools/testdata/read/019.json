@@ -1,0 +1,7 @@
+{
+  "method": "GET",
+  "path": "/jmap/download/c/ch3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaawsaglq/notes.txt",
+  "status": 200,
+  "content_type": "text/plain",
+  "body": "TGluZSBvbmUgb2YgdGhlIG5vdGVzLg0KTGluZSB0d28gb2YgdGhlIG5vdGVzLg=="
+}

@@ -1,0 +1,166 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "ids": [
+            "uaaaaaf"
+          ],
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "sentAt",
+            "from",
+            "to",
+            "cc",
+            "bcc",
+            "replyTo",
+            "sender",
+            "subject",
+            "messageId",
+            "inReplyTo",
+            "references",
+            "textBody",
+            "htmlBody",
+            "attachments",
+            "bodyValues",
+            "size",
+            "hasAttachment",
+            "preview"
+          ],
+          "bodyProperties": [
+            "partId",
+            "blobId",
+            "size",
+            "name",
+            "type",
+            "charset",
+            "disposition",
+            "cid"
+          ],
+          "fetchTextBodyValues": true,
+          "fetchHTMLBodyValues": true,
+          "maxBodyValueBytes": 1044
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sa2",
+          "list": [
+            {
+              "id": "uaaaaaf",
+              "threadId": "f",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-08T12:00:00Z",
+              "sentAt": "2026-10-08T12:00:00Z",
+              "from": [
+                {
+                  "name": "Erin",
+                  "email": "erin@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": null,
+                  "email": "alice@example.test"
+                }
+              ],
+              "cc": null,
+              "bcc": null,
+              "replyTo": null,
+              "sender": null,
+              "subject": "Notes and picture",
+              "messageId": [
+                "notes-1@example.org"
+              ],
+              "inReplyTo": null,
+              "references": null,
+              "textBody": [
+                {
+                  "partId": "1",
+                  "blobId": "ch3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaawiqefy",
+                  "size": 23,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "htmlBody": [
+                {
+                  "partId": "1",
+                  "blobId": "ch3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaawiqefy",
+                  "size": 23,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "attachments": [
+                {
+                  "partId": "2",
+                  "blobId": "ch3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaawsaglq",
+                  "size": 46,
+                  "name": "notes.txt",
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": "attachment",
+                  "cid": null
+                },
+                {
+                  "partId": "3",
+                  "blobId": "cp3orsbd1lrpvc1uz1h2irxt0vv9du7f7dukapzudsj7yui3i2ylwaqaaxoqiya",
+                  "size": 70,
+                  "name": "dot.png",
+                  "type": "image/png",
+                  "charset": null,
+                  "disposition": "attachment",
+                  "cid": null
+                }
+              ],
+              "bodyValues": {
+                "1": {
+                  "isEncodingProblem": false,
+                  "isTruncated": false,
+                  "value": "See the attached notes."
+                }
+              },
+              "size": 711,
+              "hasAttachment": true,
+              "preview": "See the attached notes."
+            }
+          ],
+          "notFound": []
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "9af353d7"
+  }
+}
