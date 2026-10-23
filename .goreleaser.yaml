@@ -71,8 +71,11 @@ homebrew_casks:
     repository:
       owner: kOlapsis
       name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}false{{ else }}true{{ end }}'
+      branch: main
+      git:
+        url: git@github.com:kOlapsis/homebrew-tap.git
+        private_key: "{{ .Env.HOMEBREW_TAP_DEPLOY_KEY }}"
+    skip_upload: '{{ if index .Env "HOMEBREW_TAP_DEPLOY_KEY" }}false{{ else }}true{{ end }}'
     directory: Casks
     homepage: https://github.com/kOlapsis/jmap-mcp
     description: MCP server giving AI assistants OAuth access to JMAP mailboxes

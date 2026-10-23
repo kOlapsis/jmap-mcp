@@ -151,7 +151,7 @@ Then run `/mcp` in Claude Code and choose the server to authenticate in the brow
 ### 4. Claude Code and Claude Desktop, local (stdio)
 
 Install the binary, from the [releases](https://github.com/kOlapsis/jmap-mcp/releases), with
-Homebrew (`brew install --cask kolapsis/tap/jmap-mcp`) or with Go:
+Homebrew (`brew install --cask kolapsis/tap/jmap-mcp`, macOS and Linux) or with Go:
 
 ```sh
 go install github.com/kOlapsis/jmap-mcp@latest
@@ -393,8 +393,9 @@ made, checked against the actual software in October 2026:
 
 Every push to `main` builds the image and pushes `ghcr.io/kolapsis/jmap-mcp:main` (workflow
 `image.yml`). Maintainers publish a version by pushing a `vX.Y.Z` tag. The release workflow runs GoReleaser (archives, checksums, SBOMs,
-multi-arch image on GHCR with semver and `latest` tags, Homebrew cask when `HOMEBREW_TAP_TOKEN` is
-set), builds and uploads `jmap-mcp.mcpb`, then publishes `server.json` to the MCP registry with
+multi-arch image on GHCR with semver and `latest` tags, Homebrew cask pushed to
+[kOlapsis/homebrew-tap](https://github.com/kOlapsis/homebrew-tap) with the deploy key stored in the
+`HOMEBREW_TAP_DEPLOY_KEY` secret), builds and uploads `jmap-mcp.mcpb`, then publishes `server.json` to the MCP registry with
 GitHub OIDC.
 
 One-time setup: make the `jmap-mcp` package public in the organization's GitHub packages after the

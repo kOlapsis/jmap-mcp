@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-23
+
+### Added
+
+- Homebrew cask in [kOlapsis/homebrew-tap](https://github.com/kOlapsis/homebrew-tap):
+  `brew install --cask kolapsis/tap/jmap-mcp`.
+
+### Changed
+
+- Vulnerabilities are reported through GitHub private reporting only.
+
 ## [0.1.0] - 2026-10-23
 
 First release.
@@ -74,5 +85,6 @@ First release.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.
 
-[Unreleased]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kOlapsis/jmap-mcp/releases/tag/v0.1.0
