@@ -1,0 +1,69 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kOlapsis/jmap-mcp",
+  "title": "JMAP mail",
+  "description": "Read, organize, draft and send email on any JMAP server, with OAuth sign-in and zero configuration",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/kOlapsis/jmap-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://github.com/kOlapsis/jmap-mcp",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/kolapsis/jmap-mcp:0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "value": "-i"
+        },
+        {
+          "type": "named",
+          "name": "--volume",
+          "description": "Named volume keeping the connected accounts between runs",
+          "value": "jmap-mcp-data:/data"
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "stdio"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "JMAP_MCP_ENABLE_SEND",
+          "description": "Allow sending email; every message is still confirmed by the user",
+          "default": "false",
+          "choices": ["true", "false"]
+        },
+        {
+          "name": "JMAP_MCP_LOG_LEVEL",
+          "description": "Log level",
+          "default": "info",
+          "choices": ["debug", "info", "warn", "error"]
+        }
+      ]
+    },
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/kOlapsis/jmap-mcp/releases/download/v0.1.0/jmap-mcp.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "JMAP_MCP_ENABLE_SEND",
+          "description": "Allow sending email; every message is still confirmed by the user",
+          "default": "false",
+          "choices": ["true", "false"]
+        }
+      ]
+    }
+  ]
+}

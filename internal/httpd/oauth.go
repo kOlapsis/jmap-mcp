@@ -233,6 +233,7 @@ type pending struct {
 	Issuer        string `json:"issuer,omitempty"`
 	SessionURL    string `json:"session_url,omitempty"`
 	Verifier      string `json:"verifier,omitempty"`
+	Nonce         string `json:"nonce,omitempty"`
 }
 
 // redirectError sends an OAuth error back to the client's redirect URI.
@@ -320,7 +321,7 @@ func (s *Server) authorizeSubmit(w http.ResponseWriter, r *http.Request) {
 			map[string]string{"Redirect address": callback, "Authorization server": srv.Meta.Issuer})
 		return
 	}
-	p.Email, p.Issuer, p.SessionURL, p.Verifier = strings.ToLower(email), srv.Meta.Issuer, srv.SessionURL, oauth2.GenerateVerifier()
+	p.Email, p.Issuer, p.SessionURL, p.Verifier, p.Nonce = strings.ToLower(email), srv.Meta.Issuer, srv.SessionURL, oauth2.GenerateVerifier(), store.RandomToken("")
 	if err := s.st.SaveAuthRequest(r.Context(), id, p, requestTTL); err != nil {
 		s.page(w, http.StatusInternalServerError, "Error", "Please retry.", nil)
 		return
@@ -328,7 +329,7 @@ func (s *Server) authorizeSubmit(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: cookieValue(id), Path: "/", MaxAge: int(requestTTL.Seconds()), //nolint:gosec // Secure is off only for a plain-http development URL
 		HttpOnly: true, Secure: strings.HasPrefix(s.base(r), "https://"), SameSite: http.SameSiteLaxMode})
 	cfg := mailauth.Config(h.Meta, h.Registration, callback)
-	http.Redirect(w, r, cfg.AuthCodeURL(id, oauth2.S256ChallengeOption(p.Verifier), oauth2.SetAuthURLParam("login_hint", p.Email)), http.StatusFound) //nolint:gosec // the discovered mail authorization endpoint
+	http.Redirect(w, r, cfg.AuthCodeURL(id, oauth2.S256ChallengeOption(p.Verifier), oauth2.SetAuthURLParam("login_hint", p.Email), oauth2.SetAuthURLParam("nonce", p.Nonce)), http.StatusFound) //nolint:gosec // the discovered mail authorization endpoint
 }
 
 const authCookie = "jmap_mcp_auth"
@@ -395,6 +396,9 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg := mailauth.Config(h.Meta, h.Registration, s.base(r)+"/callback")
 	tok, err := cfg.Exchange(s.env.Context(r.Context()), q.Get("code"), oauth2.VerifierOption(p.Verifier))
+	if err == nil {
+		err = mailauth.CheckIDToken(h.Meta, tok, cfg.ClientID, p.Nonce)
+	}
 	if err != nil {
 		s.log.Warn("mail token exchange failed", "issuer", p.Issuer, "err", err)
 		s.redirectError(w, r, p, "access_denied", "the mail server did not issue a token")

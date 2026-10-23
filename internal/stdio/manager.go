@@ -157,8 +157,8 @@ func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.S
 	}
 	redirect := fmt.Sprintf("http://127.0.0.1:%d/callback", ln.Addr().(*net.TCPAddr).Port)
 	cfg := mailauth.Config(h.Meta, h.Registration, redirect)
-	state, verifier := store.RandomToken(""), oauth2.GenerateVerifier()
-	authURL := cfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("login_hint", email))
+	state, nonce, verifier := store.RandomToken(""), store.RandomToken(""), oauth2.GenerateVerifier()
+	authURL := cfg.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier), oauth2.SetAuthURLParam("login_hint", email), oauth2.SetAuthURLParam("nonce", nonce))
 	if err := m.browser(authURL); err != nil {
 		ln.Close()
 		m.log.Info("could not open a browser", "err", err)
@@ -208,6 +208,9 @@ func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.S
 			if res.err == nil {
 				var tok *oauth2.Token
 				tok, res.err = cfg.Exchange(m.env.Context(wait), res.code, oauth2.VerifierOption(verifier))
+				if res.err == nil {
+					res.err = mailauth.CheckIDToken(h.Meta, tok, cfg.ClientID, nonce)
+				}
 				if res.err == nil {
 					res.err = m.finish(wait, email, srv, h, tok)
 				}

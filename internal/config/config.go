@@ -48,9 +48,9 @@ func Parse(args []string, stderr io.Writer) (*Config, error) {
 		fs.BoolVar(p, name, v, usage)
 	}
 	str(&c.DataDir, "data-dir", "", "data directory (default: $XDG_CONFIG_HOME/jmap-mcp or OS equivalent)")
-	str(&c.Listen, "listen", ":8080", "HTTP listen address (serve)")
+	str(&c.Listen, "listen", ":8080", "HTTP listen address of serve (default :8080)")
 	str(&c.PublicURL, "public-url", "", "public base URL of the bridge (default: derived from X-Forwarded-* headers)")
-	str(&level, "log-level", "info", "log level: debug, info, warn, error")
+	str(&level, "log-level", "info", "log level: debug, info (default), warn, error")
 	boolean(&c.EnableSend, "enable-send", "allow sending email (always confirmed by the user)")
 	boolean(&c.Net.AllowPrivate, "allow-private-networks", "allow mail servers on private or loopback addresses (disables part of the SSRF protection)")
 	boolean(&c.Net.AllowHTTP, "dev-allow-http", "development only: accept plain http mail servers")
@@ -59,8 +59,12 @@ func Parse(args []string, stderr io.Writer) (*Config, error) {
 	str(&c.DevToken, "dev-token", "", "development only: static JMAP bearer token (stdio)")
 	str(&c.DevSessionURL, "dev-session-url", "", "development only: JMAP session URL used with --dev-token")
 	fs.Usage = func() {
-		fmt.Fprintf(stderr, "Usage: jmap-mcp [serve|version|admin-token] [flags]\n\n  (no command)  MCP server on stdio\n  serve         MCP server over HTTP with OAuth\n  admin-token   print the token of the /admin page\n\nFlags (also read from %s<FLAG_NAME>):\n", EnvPrefix)
-		fs.PrintDefaults()
+		fmt.Fprintf(stderr, "Usage: jmap-mcp [stdio|serve|admin-token|healthcheck|version] [flags]\n\n  stdio         MCP server on standard input and output (default)\n  serve         MCP server over HTTP with OAuth\n  admin-token   print the token of the /admin page\n  healthcheck   exit 0 when the local HTTP server answers /healthz\n\nFlags (also read from %s<FLAG_NAME>):\n", EnvPrefix)
+		fs.VisitAll(func(f *flag.Flag) {
+			if !strings.HasPrefix(f.Name, "dev-") {
+				fmt.Fprintf(stderr, "  --%s\n    \t%s\n", f.Name, f.Usage)
+			}
+		})
 	}
 	if err := fs.Parse(args); err != nil {
 		return nil, err

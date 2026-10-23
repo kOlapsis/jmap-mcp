@@ -1,0 +1,4 @@
+# Caddy sets X-Forwarded-Proto and X-Forwarded-Host, from which jmap-mcp derives its public URL.
+mcp.example.com {
+	reverse_proxy jmap-mcp:8080
+}

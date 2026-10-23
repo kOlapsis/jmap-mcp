@@ -1,0 +1,21 @@
+# jmap-mcp behind Caddy, which obtains the TLS certificate itself.
+# Point the DNS name of your Caddyfile at this host, then: docker compose up -d
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+  jmap-mcp:
+    image: ghcr.io/kolapsis/jmap-mcp:latest
+    restart: unless-stopped
+    volumes:
+      - jmap-mcp-data:/data
+
+volumes:
+  caddy-data:
+  jmap-mcp-data:

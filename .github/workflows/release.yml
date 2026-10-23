@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    outputs:
+      mcpb_sha256: ${{ steps.mcpb.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go test -count=1 ./...
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: anchore/sbom-action/download-syft@v0
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      - name: Build and upload the Claude Desktop bundle
+        id: mcpb
+        run: |
+          sha=$(scripts/build-mcpb.sh "${GITHUB_REF_NAME#v}")
+          gh release upload "$GITHUB_REF_NAME" dist/jmap-mcp.mcpb
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Re-run this job alone if it fails: the first image push leaves the GHCR package
+  # private, and the registry can only verify a public image (see README, Releasing).
+  mcp-registry:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set the release version in server.json
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          jq --arg v "$v" --arg tag "$GITHUB_REF_NAME" --arg sha "${{ needs.release.outputs.mcpb_sha256 }}" '
+            .version = $v
+            | .packages[0].identifier = "ghcr.io/kolapsis/jmap-mcp:" + $v
+            | .packages[1].identifier = "https://github.com/kOlapsis/jmap-mcp/releases/download/" + $tag + "/jmap-mcp.mcpb"
+            | .packages[1].fileSha256 = $sha' server.json > server.tmp && mv server.tmp server.json
+          cat server.json
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.1/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish

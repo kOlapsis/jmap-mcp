@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.3",
+  "name": "jmap-mcp",
+  "display_name": "JMAP mail",
+  "version": "0.0.0",
+  "description": "Read, organize, draft and send email on any JMAP server (Stalwart and others), with OAuth sign-in.",
+  "long_description": "jmap-mcp connects Claude to your mailbox on a JMAP server such as Stalwart. Nothing to configure: ask Claude to connect your account, give your email address, and sign in on your mail server's own page in the browser. Your password never goes through Claude or this extension. Sending email is off by default and every message must be confirmed by you.",
+  "author": {
+    "name": "kOlapsis",
+    "url": "https://github.com/kOlapsis"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kOlapsis/jmap-mcp"
+  },
+  "homepage": "https://github.com/kOlapsis/jmap-mcp",
+  "documentation": "https://github.com/kOlapsis/jmap-mcp#readme",
+  "support": "https://github.com/kOlapsis/jmap-mcp/issues",
+  "license": "Apache-2.0",
+  "keywords": ["email", "jmap", "stalwart", "mail", "oauth"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/jmap-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/server/jmap-mcp",
+      "args": ["stdio"],
+      "env": {
+        "JMAP_MCP_ENABLE_SEND": "${user_config.enable_send}"
+      },
+      "platform_overrides": {
+        "win32": {
+          "command": "${__dirname}/server/jmap-mcp.exe"
+        }
+      }
+    }
+  },
+  "user_config": {
+    "enable_send": {
+      "type": "boolean",
+      "title": "Allow sending email",
+      "description": "Let Claude send email. Every message is still shown to you for confirmation before it leaves.",
+      "default": false,
+      "required": false
+    }
+  },
+  "tools": [
+    { "name": "list_accounts", "description": "List the connected mail accounts and the default one" },
+    { "name": "connect_account", "description": "Connect a mail account from its email address (browser sign-in)" },
+    { "name": "list_mailboxes", "description": "List mailboxes with roles and unread counts" },
+    { "name": "search_emails", "description": "Search emails and return compact summaries" },
+    { "name": "get_email", "description": "Read one email as text with its attachments list" },
+    { "name": "get_thread", "description": "Read a conversation" },
+    { "name": "get_attachment", "description": "Get an attachment" },
+    { "name": "update_emails", "description": "Mark emails read, unread, flagged or unflagged" },
+    { "name": "move_emails", "description": "Move emails to a mailbox" },
+    { "name": "delete_emails", "description": "Move emails to the trash, or delete them after confirmation" },
+    { "name": "create_draft", "description": "Create a draft or a reply" }
+  ],
+  "tools_generated": true,
+  "compatibility": {
+    "platforms": ["darwin", "win32"]
+  }
+}

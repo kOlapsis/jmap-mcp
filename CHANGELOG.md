@@ -52,5 +52,10 @@ All notable changes to this project are documented here. The format follows
   user.
 - Encrypted SQLite store (AES-GCM, master key generated on first start and
   kept in the OS keyring when available, otherwise in a 0600 file).
+- Distribution: multi-arch distroless image on GHCR (non-root, `/data` volume,
+  `healthcheck` command), Docker Compose example for Traefik, Caddy example,
+  systemd unit, GoReleaser configuration (archives, checksums, SBOMs, image,
+  Homebrew cask), Claude Desktop bundle (`.mcpb`), `server.json` for the MCP
+  registry, CI and release workflows, Dependabot.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.

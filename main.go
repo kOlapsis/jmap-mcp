@@ -7,10 +7,13 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 
 	"github.com/kOlapsis/jmap-mcp/internal/config"
 	"github.com/kOlapsis/jmap-mcp/internal/httpd"
@@ -42,8 +45,10 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	switch cfg.Command {
-	case "":
+	case "", "stdio":
 		return stdio.Run(ctx, cfg, version, log)
+	case "healthcheck":
+		return healthcheck(cfg.Listen)
 	case "serve":
 		srv, err := httpd.New(cfg, version, log)
 		if err != nil {
@@ -65,4 +70,27 @@ func run() error {
 	default:
 		return fmt.Errorf("unknown command %q", cfg.Command)
 	}
+}
+
+// healthcheck probes /healthz on the local listener; the distroless image has no curl.
+func healthcheck(listen string) error {
+	_, port, err := net.SplitHostPort(listen)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:"+port+"/healthz", nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("healthz: HTTP %d", resp.StatusCode)
+	}
+	return nil
 }

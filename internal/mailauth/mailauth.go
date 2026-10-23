@@ -3,6 +3,7 @@ package mailauth
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -277,6 +278,46 @@ func CheckIssuer(m *Meta, iss string) error {
 	}
 	if strings.TrimSuffix(iss, "/") != strings.TrimSuffix(m.Issuer, "/") {
 		return fmt.Errorf("unexpected issuer %q in the authorization response", iss)
+	}
+	return nil
+}
+
+// CheckIDToken verifies the nonce, issuer and audience of the ID token returned with tok, if any.
+// The token comes straight from the token endpoint over TLS, which authenticates it (OpenID Connect Core §3.1.3.7).
+func CheckIDToken(m *Meta, tok *oauth2.Token, clientID, nonce string) error {
+	raw, _ := tok.Extra("id_token").(string)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ".")
+	if len(parts) != 3 {
+		return errors.New("malformed id_token")
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return fmt.Errorf("malformed id_token: %w", err)
+	}
+	var claims struct {
+		Issuer   string          `json:"iss"`
+		Audience json.RawMessage `json:"aud"`
+		Nonce    string          `json:"nonce"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return fmt.Errorf("malformed id_token: %w", err)
+	}
+	var aud []string
+	if json.Unmarshal(claims.Audience, &aud) != nil {
+		var one string
+		_ = json.Unmarshal(claims.Audience, &one)
+		aud = []string{one}
+	}
+	switch {
+	case claims.Nonce != nonce:
+		return errors.New("id_token nonce mismatch")
+	case strings.TrimSuffix(claims.Issuer, "/") != strings.TrimSuffix(m.Issuer, "/"):
+		return fmt.Errorf("id_token issuer %q does not match %q", claims.Issuer, m.Issuer)
+	case !slices.Contains(aud, clientID):
+		return errors.New("id_token audience mismatch")
 	}
 	return nil
 }

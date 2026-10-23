@@ -1,0 +1,29 @@
+# jmap-mcp behind an existing Traefik (v2 or v3) that already has a "websecure"
+# entrypoint and an ACME certificate resolver. Replace mcp.example.com, the
+# resolver name and the network name with yours, then: docker compose up -d
+services:
+  jmap-mcp:
+    image: ghcr.io/kolapsis/jmap-mcp:latest
+    restart: unless-stopped
+    volumes:
+      - jmap-mcp-data:/data
+    # environment:
+    #   JMAP_MCP_ENABLE_SEND: "true"   # allow sending (each message is confirmed by the user)
+    #   JMAP_MCP_LOG_LEVEL: debug
+    networks:
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: traefik
+      traefik.http.routers.jmap-mcp.rule: Host(`mcp.example.com`)
+      traefik.http.routers.jmap-mcp.entrypoints: websecure
+      traefik.http.routers.jmap-mcp.tls: "true"
+      traefik.http.routers.jmap-mcp.tls.certresolver: letsencrypt
+      traefik.http.services.jmap-mcp.loadbalancer.server.port: "8080"
+
+volumes:
+  jmap-mcp-data:
+
+networks:
+  traefik:
+    external: true

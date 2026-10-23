@@ -1,0 +1,20 @@
+# Builds the image from source: docker build -f Dockerfile.source -t jmap-mcp .
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ARG VERSION=dev
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /jmap-mcp . && mkdir -p /data
+
+FROM gcr.io/distroless/static-debian12:nonroot
+LABEL io.modelcontextprotocol.server.name="io.github.kOlapsis/jmap-mcp"
+COPY --from=build --chown=65532:65532 /data /data
+COPY --from=build /jmap-mcp /jmap-mcp
+ENV JMAP_MCP_DATA_DIR=/data
+VOLUME /data
+EXPOSE 8080
+USER nonroot:nonroot
+HEALTHCHECK --interval=30s --timeout=5s CMD ["/jmap-mcp", "healthcheck"]
+ENTRYPOINT ["/jmap-mcp"]
+CMD ["serve"]

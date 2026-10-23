@@ -1,0 +1,106 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+project_name: jmap-mcp
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: jmap-mcp
+    main: .
+    binary: jmap-mcp
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# The macOS universal binary goes into the MCP bundle (.mcpb) built by the release workflow.
+universal_binaries:
+  - id: jmap-mcp-darwin-universal
+    ids: [jmap-mcp]
+    name_template: jmap-mcp
+    replace: false
+
+archives:
+  - id: default
+    ids: [jmap-mcp]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - deploy/**/*
+
+checksum:
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+dockers_v2:
+  - id: image
+    dockerfile: Dockerfile
+    images:
+      - ghcr.io/kolapsis/jmap-mcp
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}{{ .Major }}.{{ .Minor }}{{ end }}"
+      - "{{ if not .Prerelease }}{{ .Major }}{{ end }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    labels:
+      org.opencontainers.image.title: jmap-mcp
+      org.opencontainers.image.description: MCP server giving AI assistants OAuth access to JMAP mailboxes
+      org.opencontainers.image.source: https://github.com/kOlapsis/jmap-mcp
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.licenses: Apache-2.0
+      io.modelcontextprotocol.server.name: io.github.kOlapsis/jmap-mcp
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    sbom: true
+
+homebrew_casks:
+  - name: jmap-mcp
+    ids: [default]
+    repository:
+      owner: kOlapsis
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}false{{ else }}true{{ end }}'
+    directory: Casks
+    homepage: https://github.com/kOlapsis/jmap-mcp
+    description: MCP server giving AI assistants OAuth access to JMAP mailboxes
+    license: Apache-2.0
+    binaries: [jmap-mcp]
+    hooks:
+      post:
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/jmap-mcp"]
+          end
+
+changelog:
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: kOlapsis
+    name: jmap-mcp
+  footer: |
+    Container image: `ghcr.io/kolapsis/jmap-mcp:{{ .Version }}` (linux/amd64, linux/arm64).
+    Claude Desktop bundle: `jmap-mcp.mcpb`. See the README for installation.

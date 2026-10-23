@@ -1,0 +1,34 @@
+# Install the binary in /usr/local/bin, copy this file to /etc/systemd/system/,
+# then: systemctl daemon-reload && systemctl enable --now jmap-mcp
+# Put a reverse proxy with TLS in front of 127.0.0.1:8080, or set JMAP_MCP_PUBLIC_URL.
+[Unit]
+Description=jmap-mcp, MCP server for JMAP mailboxes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/jmap-mcp serve
+Environment=JMAP_MCP_LISTEN=127.0.0.1:8080
+Environment=JMAP_MCP_DATA_DIR=/var/lib/jmap-mcp
+#Environment=JMAP_MCP_ENABLE_SEND=true
+DynamicUser=yes
+StateDirectory=jmap-mcp
+StateDirectoryMode=0700
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
