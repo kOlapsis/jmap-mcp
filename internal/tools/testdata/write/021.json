@@ -1,13 +1,45 @@
 {
   "method": "POST",
-  "path": "/jmap/upload/c/",
+  "path": "/jmap/",
   "status": 200,
   "content_type": "application/json; charset=utf-8",
-  "request_body": "MS4gU2NvcGUKMi4gUGxhbm5pbmcK",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "update": {
+            "eaaaaab": {
+              "mailboxIds": {
+                "b": true
+              }
+            }
+          }
+        },
+        "0"
+      ]
+    ]
+  },
   "response": {
-    "accountId": "c",
-    "blobId": "ed3eazvl0knf0fcockeihpvgucularrlciappke97lmpahza2rqd7auv9lw0mbq",
-    "type": "text/plain; charset=utf-8",
-    "size": 21
+    "methodResponses": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "sbq",
+          "newState": "sbu",
+          "updated": {
+            "eaaaaab": null
+          }
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "606ebb50"
   }
 }

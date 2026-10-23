@@ -10,9 +10,50 @@
     ],
     "methodCalls": [
       [
-        "Mailbox/get",
+        "Email/get",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "ids": [
+            "maaaaah"
+          ],
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "sentAt",
+            "from",
+            "to",
+            "cc",
+            "bcc",
+            "replyTo",
+            "sender",
+            "subject",
+            "messageId",
+            "inReplyTo",
+            "references",
+            "textBody",
+            "htmlBody",
+            "attachments",
+            "bodyValues",
+            "size",
+            "hasAttachment",
+            "preview"
+          ],
+          "bodyProperties": [
+            "partId",
+            "blobId",
+            "size",
+            "name",
+            "type",
+            "charset",
+            "disposition",
+            "cid"
+          ],
+          "fetchTextBodyValues": true,
+          "fetchHTMLBodyValues": true,
+          "maxBodyValueBytes": 41024
         },
         "0"
       ]
@@ -21,130 +62,100 @@
   "response": {
     "methodResponses": [
       [
-        "Mailbox/get",
+        "Email/get",
         {
           "accountId": "c",
           "state": "sca",
           "list": [
             {
-              "id": "b",
-              "name": "Deleted Items",
-              "parentId": null,
-              "role": "trash",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 0,
-              "unreadEmails": 0,
-              "totalThreads": 0,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "a",
-              "name": "Inbox",
-              "parentId": null,
-              "role": "inbox",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 5,
-              "unreadEmails": 5,
-              "totalThreads": 4,
-              "unreadThreads": 4,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "d",
-              "name": "Drafts",
-              "parentId": null,
-              "role": "drafts",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 1,
-              "unreadEmails": 0,
-              "totalThreads": 1,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "e",
-              "name": "Sent Items",
-              "parentId": null,
-              "role": "sent",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 1,
-              "unreadEmails": 0,
-              "totalThreads": 1,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "c",
-              "name": "Junk Mail",
-              "parentId": null,
-              "role": "junk",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 0,
-              "unreadEmails": 0,
-              "totalThreads": 0,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
+              "id": "maaaaah",
+              "threadId": "d",
+              "mailboxIds": {
+                "d": true
+              },
+              "keywords": {
+                "$draft": true,
+                "$seen": true
+              },
+              "receivedAt": "2026-10-23T22:17:45Z",
+              "sentAt": "2026-10-20T12:00:00Z",
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "cc": [
+                {
+                  "name": "Dave",
+                  "email": "dave@example.org"
+                }
+              ],
+              "bcc": null,
+              "replyTo": null,
+              "sender": null,
+              "subject": "Re: Project kickoff",
+              "messageId": [
+                "18e148859ca74932.ec258dc360103609.5ff86f083cdfcca9@mail.example.test"
+              ],
+              "inReplyTo": [
+                "kickoff-1@example.org"
+              ],
+              "references": [
+                "kickoff-1@example.org"
+              ],
+              "textBody": [
+                {
+                  "partId": "1",
+                  "blobId": "cfyosazhj2vlpuwti731w3dv9rhpx0at7dmwqli3xgwybplh2hsxoaqaa3iajaqb",
+                  "size": 130,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "htmlBody": [
+                {
+                  "partId": "1",
+                  "blobId": "cfyosazhj2vlpuwti731w3dv9rhpx0at7dmwqli3xgwybplh2hsxoaqaa3iajaqb",
+                  "size": 130,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "attachments": [
+                {
+                  "partId": "2",
+                  "blobId": "cjyosazhj2vlpuwti731w3dv9rhpx0at7dmwqli3xgwybplh2hsxoaqaa1fqogi",
+                  "size": 21,
+                  "name": "agenda.txt",
+                  "type": "text/plain",
+                  "charset": "us-ascii",
+                  "disposition": "attachment",
+                  "cid": null
+                }
+              ],
+              "bodyValues": {
+                "1": {
+                  "isEncodingProblem": false,
+                  "isTruncated": false,
+                  "value": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n"
+                }
+              },
+              "size": 990,
+              "hasAttachment": true,
+              "preview": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n"
             }
           ],
           "notFound": []
@@ -152,6 +163,6 @@
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

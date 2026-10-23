@@ -1,0 +1,7 @@
+{
+  "method": "GET",
+  "path": "/jmap/download/c/cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo/newsletters.sieve",
+  "status": 200,
+  "content_type": "application/sieve",
+  "body": "cmVxdWlyZSAiZmlsZWludG8iOwppZiBoZWFkZXIgOmNvbnRhaW5zICJzdWJqZWN0IiAibmV3c2xldHRlciIgeyBmaWxlaW50byAiQXJjaGl2ZSI7IH0K"
+}

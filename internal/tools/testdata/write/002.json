@@ -27,10 +27,10 @@
           "state": "sa2",
           "list": [
             {
-              "id": "b",
-              "name": "Deleted Items",
+              "id": "d",
+              "name": "Drafts",
               "parentId": null,
-              "role": "trash",
+              "role": "drafts",
               "sortOrder": 0,
               "isSubscribed": true,
               "totalEmails": 0,
@@ -75,10 +75,10 @@
               }
             },
             {
-              "id": "d",
-              "name": "Drafts",
+              "id": "e",
+              "name": "Sent Items",
               "parentId": null,
-              "role": "drafts",
+              "role": "sent",
               "sortOrder": 0,
               "isSubscribed": true,
               "totalEmails": 0,
@@ -99,10 +99,10 @@
               }
             },
             {
-              "id": "e",
-              "name": "Sent Items",
+              "id": "b",
+              "name": "Deleted Items",
               "parentId": null,
-              "role": "sent",
+              "role": "trash",
               "sortOrder": 0,
               "isSubscribed": true,
               "totalEmails": 0,
@@ -152,6 +152,6 @@
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

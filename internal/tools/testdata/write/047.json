@@ -6,13 +6,27 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:sieve"
+      "urn:ietf:params:jmap:submission",
+      "urn:ietf:params:jmap:mail"
     ],
     "methodCalls": [
       [
-        "SieveScript/get",
+        "EmailSubmission/set",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "create": {
+            "send": {
+              "identityId": "b",
+              "emailId": "beaaaaaj"
+            }
+          },
+          "onSuccessUpdateEmail": {
+            "#send": {
+              "keywords/$draft": null,
+              "mailboxIds/d": null,
+              "mailboxIds/e": true
+            }
+          }
         },
         "0"
       ]
@@ -21,23 +35,33 @@
   "response": {
     "methodResponses": [
       [
-        "SieveScript/get",
+        "EmailSubmission/set",
         {
           "accountId": "c",
-          "state": "scq",
-          "list": [
-            {
-              "id": "b",
-              "name": "vacation",
-              "blobId": "cffl371evjql1zja0aiunlnutlt1qpfhorq9kxlhcd0sri02jccv1aqfaeapgai",
-              "isActive": true
+          "newState": "scu",
+          "created": {
+            "send": {
+              "id": "c",
+              "sendAt": "2026-10-23T22:17:45Z",
+              "undoStatus": "pending"
             }
-          ],
-          "notFound": []
+          }
+        },
+        "0"
+      ],
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "scq",
+          "newState": "scy",
+          "updated": {
+            "beaaaaaj": null
+          }
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

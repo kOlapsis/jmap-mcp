@@ -42,6 +42,12 @@ func (s *Server) registerWriteTools() {
 	}, handler(s.moveEmails))
 
 	mcp.AddTool(s.Server, &mcp.Tool{
+		Name:        "create_folder",
+		Description: "Create a folder (mailbox), at the top level or inside a parent mailbox given by id, role or name.",
+		Annotations: &mcp.ToolAnnotations{Title: "Create folder", DestructiveHint: ptr(false)},
+	}, handler(s.createFolder))
+
+	mcp.AddTool(s.Server, &mcp.Tool{
 		Name: "delete_emails",
 		Description: "Move emails to the trash. With permanent=true, destroy them instead; this cannot be undone " +
 			"and always requires the user's explicit confirmation.",
@@ -156,6 +162,57 @@ func (s *Server) moveEmails(ctx context.Context, req *mcp.CallToolRequest, in mo
 	}
 	out["mailbox"] = mailboxPaths(list)[target.ID]
 	return text(out), nil
+}
+
+type createFolderInput struct {
+	Account string `json:"account,omitempty" jsonschema:"email address of the connected account to use; defaults to the default account"`
+	Name    string `json:"name" jsonschema:"name of the new folder"`
+	Parent  string `json:"parent,omitempty" jsonschema:"parent mailbox: id, role or name; empty for a top-level folder"`
+}
+
+func (s *Server) createFolder(ctx context.Context, req *mcp.CallToolRequest, in createFolderInput) (*mcp.CallToolResult, error) {
+	name := strings.TrimSpace(in.Name)
+	if name == "" {
+		return nil, errors.New("name is empty")
+	}
+	m, res, err := s.mail(ctx, newDialog(req), in.Account)
+	if err != nil || res != nil {
+		return res, err
+	}
+	list, err := m.mailboxes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	mb := &mailbox.Mailbox{Name: name, IsSubscribed: true}
+	if in.Parent != "" {
+		parent, err := findMailbox(list, in.Parent)
+		if err != nil {
+			return nil, err
+		}
+		mb.ParentID = parent.ID
+	}
+	r := &jmap.Request{}
+	sid := r.Invoke(&mailbox.Set{Account: m.id, Create: map[jmap.ID]*mailbox.Mailbox{"new": mb}})
+	resp, err := m.c.Do(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	out, err := jmapc.Result[*mailbox.SetResponse](resp, sid)
+	if err != nil {
+		return nil, err
+	}
+	if err := jmapc.SetErrors(out.NotCreated); err != nil {
+		return nil, err
+	}
+	created := out.Created["new"]
+	if created == nil {
+		return nil, errors.New("the server did not create the folder")
+	}
+	path := name
+	if mb.ParentID != "" {
+		path = mailboxPaths(list)[mb.ParentID] + "/" + name
+	}
+	return text(map[string]any{"id": created.ID, "path": path}), nil
 }
 
 type deleteInput struct {

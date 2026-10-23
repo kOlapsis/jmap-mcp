@@ -6,49 +6,13 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:mail"
+      "urn:ietf:params:jmap:submission"
     ],
     "methodCalls": [
       [
-        "Email/set",
+        "Identity/get",
         {
-          "accountId": "c",
-          "create": {
-            "draft": {
-              "mailboxIds": {
-                "d": true
-              },
-              "keywords": {
-                "$draft": true,
-                "$seen": true
-              },
-              "from": [
-                {
-                  "name": "alice@example.test",
-                  "email": "alice@example.test"
-                }
-              ],
-              "to": [
-                {
-                  "email": "bob@example.test"
-                }
-              ],
-              "subject": "Draft then send",
-              "sentAt": "2026-10-20T12:00:00Z",
-              "bodyValues": {
-                "body": {
-                  "value": "Hello",
-                  "isTruncated": false
-                }
-              },
-              "textBody": [
-                {
-                  "partId": "body",
-                  "type": "text/plain"
-                }
-              ]
-            }
-          }
+          "accountId": "c"
         },
         "0"
       ]
@@ -57,23 +21,27 @@
   "response": {
     "methodResponses": [
       [
-        "Email/set",
+        "Identity/get",
         {
           "accountId": "c",
-          "oldState": "sca",
-          "newState": "sce",
-          "created": {
-            "draft": {
-              "id": "beaaaaaj",
-              "threadId": "j",
-              "blobId": "cafg7mp9dha07lrvd0cpypnxpaqqm19ph9p1uucnsrm9qot09khryaqabe",
-              "size": 323
+          "state": "sb2",
+          "list": [
+            {
+              "id": "b",
+              "name": "alice@example.test",
+              "email": "alice@example.test",
+              "replyTo": null,
+              "bcc": null,
+              "textSignature": "",
+              "htmlSignature": "",
+              "mayDelete": true
             }
-          }
+          ],
+          "notFound": []
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

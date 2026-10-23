@@ -49,6 +49,7 @@ converted to text and truncated with an explicit flag.
 | `get_attachment` | Text and small images inline; otherwise a signed URL valid 15 minutes (HTTP mode) or a private temporary file (local mode). |
 | `update_emails` | Read, unread, flagged, unflagged. |
 | `move_emails` | Move to a mailbox given by id, role or name. |
+| `create_folder` | Create a folder, at the top level or inside a parent given by id, role or name. |
 | `delete_emails` | Trash by default; `permanent` destroys after the user's confirmation. |
 | `create_draft` | New message or reply: In-Reply-To, References, `Re:` subject, quote, reply-all recipients, attachments uploaded over JMAP. |
 | `send_email` | Sends a draft, or composes and sends. Disabled unless `--enable-send`; every message is confirmed by the user. |

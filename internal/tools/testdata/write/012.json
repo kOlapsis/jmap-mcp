@@ -10,14 +10,13 @@
     ],
     "methodCalls": [
       [
-        "Email/set",
+        "Mailbox/set",
         {
           "accountId": "c",
-          "update": {
-            "eaaaaab": {
-              "mailboxIds": {
-                "b": true
-              }
+          "create": {
+            "new": {
+              "name": "Projects",
+              "isSubscribed": true
             }
           }
         },
@@ -28,18 +27,20 @@
   "response": {
     "methodResponses": [
       [
-        "Email/set",
+        "Mailbox/set",
         {
           "accountId": "c",
           "oldState": "sbe",
           "newState": "sbi",
-          "updated": {
-            "eaaaaab": null
+          "created": {
+            "new": {
+              "id": "h"
+            }
           }
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

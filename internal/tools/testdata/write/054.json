@@ -10,9 +10,10 @@
     ],
     "methodCalls": [
       [
-        "SieveScript/get",
+        "SieveScript/validate",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "blobId": "edx9utwusjxu7yxdvtowy2wtrplbbq2ro2ey0zgowhgjscpt1kpicauz79x0mbq"
         },
         "0"
       ]
@@ -21,29 +22,17 @@
   "response": {
     "methodResponses": [
       [
-        "SieveScript/get",
+        "SieveScript/validate",
         {
           "accountId": "c",
-          "state": "scu",
-          "list": [
-            {
-              "id": "b",
-              "name": "vacation",
-              "blobId": "cffl371evjql1zja0aiunlnutlt1qpfhorq9kxlhcd0sri02jccv1aqfaeapgai",
-              "isActive": false
-            },
-            {
-              "id": "c",
-              "name": "newsletters",
-              "blobId": "cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo",
-              "isActive": true
-            }
-          ],
-          "notFound": []
+          "error": {
+            "type": "invalidScript",
+            "description": "Unterminated block at line 1, column 10."
+          }
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

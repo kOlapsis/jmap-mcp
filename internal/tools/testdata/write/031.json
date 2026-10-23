@@ -6,8 +6,7 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:mail",
-      "urn:ietf:params:jmap:submission"
+      "urn:ietf:params:jmap:mail"
     ],
     "methodCalls": [
       [
@@ -23,6 +22,12 @@
                 "$draft": true,
                 "$seen": true
               },
+              "inReplyTo": [
+                "kickoff-1@example.org"
+              ],
+              "references": [
+                "kickoff-1@example.org"
+              ],
               "from": [
                 {
                   "name": "alice@example.test",
@@ -31,15 +36,21 @@
               ],
               "to": [
                 {
-                  "name": "Bob",
-                  "email": "bob@example.test"
+                  "name": "Carol",
+                  "email": "carol@example.org"
                 }
               ],
-              "subject": "Lunch?",
+              "cc": [
+                {
+                  "name": "Dave",
+                  "email": "dave@example.org"
+                }
+              ],
+              "subject": "Re: Project kickoff",
               "sentAt": "2026-10-20T12:00:00Z",
               "bodyValues": {
                 "body": {
-                  "value": "Noon?",
+                  "value": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n",
                   "isTruncated": false
                 }
               },
@@ -48,31 +59,19 @@
                   "partId": "body",
                   "type": "text/plain"
                 }
+              ],
+              "attachments": [
+                {
+                  "blobId": "ed3eazvl0knf0fcockeihpvgucularrlciappke97lmpahza2rqd7auz79x0mbq",
+                  "name": "agenda.txt",
+                  "type": "text/plain",
+                  "disposition": "attachment"
+                }
               ]
             }
           }
         },
         "0"
-      ],
-      [
-        "EmailSubmission/set",
-        {
-          "accountId": "c",
-          "create": {
-            "send": {
-              "identityId": "b",
-              "emailId": "#draft"
-            }
-          },
-          "onSuccessUpdateEmail": {
-            "#send": {
-              "keywords/$draft": null,
-              "mailboxIds/d": null,
-              "mailboxIds/e": true
-            }
-          }
-        },
-        "1"
       ]
     ]
   },
@@ -82,47 +81,20 @@
         "Email/set",
         {
           "accountId": "c",
-          "oldState": "sbu",
-          "newState": "sby",
+          "oldState": "sby",
+          "newState": "sca",
           "created": {
             "draft": {
-              "id": "baaaaaai",
-              "threadId": "i",
-              "blobId": "cdhag7233sr1zqxc3gjuqzwhkkxw1e0w0hw2lq9qoyoo2e3zextgyaqaba",
-              "size": 321
+              "id": "maaaaah",
+              "threadId": "d",
+              "blobId": "cbyosazhj2vlpuwti731w3dv9rhpx0at7dmwqli3xgwybplh2hsxoaqaa2",
+              "size": 990
             }
           }
         },
         "0"
-      ],
-      [
-        "EmailSubmission/set",
-        {
-          "accountId": "c",
-          "newState": "sb2",
-          "created": {
-            "send": {
-              "id": "b",
-              "sendAt": "2026-10-23T13:20:05Z",
-              "undoStatus": "pending"
-            }
-          }
-        },
-        "1"
-      ],
-      [
-        "Email/set",
-        {
-          "accountId": "c",
-          "oldState": "sby",
-          "newState": "sca",
-          "updated": {
-            "baaaaaai": null
-          }
-        },
-        "1"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

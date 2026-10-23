@@ -10,50 +10,12 @@
     ],
     "methodCalls": [
       [
-        "Email/get",
+        "Email/set",
         {
           "accountId": "c",
-          "ids": [
-            "maaaaah"
-          ],
-          "properties": [
-            "id",
-            "threadId",
-            "mailboxIds",
-            "keywords",
-            "receivedAt",
-            "sentAt",
-            "from",
-            "to",
-            "cc",
-            "bcc",
-            "replyTo",
-            "sender",
-            "subject",
-            "messageId",
-            "inReplyTo",
-            "references",
-            "textBody",
-            "htmlBody",
-            "attachments",
-            "bodyValues",
-            "size",
-            "hasAttachment",
-            "preview"
-          ],
-          "bodyProperties": [
-            "partId",
-            "blobId",
-            "size",
-            "name",
-            "type",
-            "charset",
-            "disposition",
-            "cid"
-          ],
-          "fetchTextBodyValues": true,
-          "fetchHTMLBodyValues": true,
-          "maxBodyValueBytes": 41024
+          "destroy": [
+            "eaaaaab"
+          ]
         },
         "0"
       ]
@@ -62,107 +24,18 @@
   "response": {
     "methodResponses": [
       [
-        "Email/get",
+        "Email/set",
         {
           "accountId": "c",
-          "state": "sbu",
-          "list": [
-            {
-              "id": "maaaaah",
-              "threadId": "d",
-              "mailboxIds": {
-                "d": true
-              },
-              "keywords": {
-                "$draft": true,
-                "$seen": true
-              },
-              "receivedAt": "2026-10-23T13:20:05Z",
-              "sentAt": "2026-10-20T12:00:00Z",
-              "from": [
-                {
-                  "name": "alice@example.test",
-                  "email": "alice@example.test"
-                }
-              ],
-              "to": [
-                {
-                  "name": "Carol",
-                  "email": "carol@example.org"
-                }
-              ],
-              "cc": [
-                {
-                  "name": "Dave",
-                  "email": "dave@example.org"
-                }
-              ],
-              "bcc": null,
-              "replyTo": null,
-              "sender": null,
-              "subject": "Re: Project kickoff",
-              "messageId": [
-                "18e12b2e8f497335.620757f943fe208.e72284261170d881@mail.example.test"
-              ],
-              "inReplyTo": [
-                "kickoff-1@example.org"
-              ],
-              "references": [
-                "kickoff-1@example.org"
-              ],
-              "textBody": [
-                {
-                  "partId": "1",
-                  "blobId": "cec2jhdmkj77loy1ei7gytwmmjgg2d2r0mbnsnuxha7sic2mycvhmaqaa3hqjaqb",
-                  "size": 130,
-                  "name": null,
-                  "type": "text/plain",
-                  "charset": "utf-8",
-                  "disposition": null,
-                  "cid": null
-                }
-              ],
-              "htmlBody": [
-                {
-                  "partId": "1",
-                  "blobId": "cec2jhdmkj77loy1ei7gytwmmjgg2d2r0mbnsnuxha7sic2mycvhmaqaa3hqjaqb",
-                  "size": 130,
-                  "name": null,
-                  "type": "text/plain",
-                  "charset": "utf-8",
-                  "disposition": null,
-                  "cid": null
-                }
-              ],
-              "attachments": [
-                {
-                  "partId": "2",
-                  "blobId": "cic2jhdmkj77loy1ei7gytwmmjgg2d2r0mbnsnuxha7sic2mycvhmaqaa1faogi",
-                  "size": 21,
-                  "name": "agenda.txt",
-                  "type": "text/plain",
-                  "charset": "us-ascii",
-                  "disposition": "attachment",
-                  "cid": null
-                }
-              ],
-              "bodyValues": {
-                "1": {
-                  "isEncodingProblem": false,
-                  "isTruncated": false,
-                  "value": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n"
-                }
-              },
-              "size": 989,
-              "hasAttachment": true,
-              "preview": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n"
-            }
-          ],
-          "notFound": []
+          "oldState": "sbu",
+          "newState": "sby",
+          "destroyed": [
+            "eaaaaab"
+          ]
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

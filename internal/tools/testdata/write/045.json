@@ -6,14 +6,13 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:sieve"
+      "urn:ietf:params:jmap:submission"
     ],
     "methodCalls": [
       [
-        "SieveScript/validate",
+        "Identity/get",
         {
-          "accountId": "c",
-          "blobId": "edx9utwusjxu7yxdvtowy2wtrplbbq2ro2ey0zgowhgjscpt1kpicauv9lw0mbq"
+          "accountId": "c"
         },
         "0"
       ]
@@ -22,17 +21,27 @@
   "response": {
     "methodResponses": [
       [
-        "SieveScript/validate",
+        "Identity/get",
         {
           "accountId": "c",
-          "error": {
-            "type": "invalidScript",
-            "description": "Unterminated block at line 1, column 10."
-          }
+          "state": "sb2",
+          "list": [
+            {
+              "id": "b",
+              "name": "alice@example.test",
+              "email": "alice@example.test",
+              "replyTo": null,
+              "bcc": null,
+              "textSignature": "",
+              "htmlSignature": "",
+              "mayDelete": true
+            }
+          ],
+          "notFound": []
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

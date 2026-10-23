@@ -54,6 +54,17 @@ func writeScenario(t *testing.T, alice *Account, bob string, delivered func(subj
 	if search.Total != 1 {
 		t.Fatalf("move: %+v %+v", moved, search)
 	}
+	var folder, sub struct{ ID, Path string }
+	callJSON(t, modern, "create_folder", map[string]any{"name": "Projects"}, &folder)
+	callJSON(t, modern, "create_folder", map[string]any{"name": "2026", "parent": "Projects"}, &sub)
+	callJSON(t, modern, "move_emails", map[string]any{"ids": []string{report}, "mailbox": "Projects/2026"}, &moved)
+	callJSON(t, modern, "search_emails", map[string]any{"mailbox": sub.ID}, &search)
+	if folder.Path != "Projects" || sub.Path != "Projects/2026" || moved.Mailbox != "Projects/2026" || search.Total != 1 {
+		t.Fatalf("create_folder: %+v %+v %+v %+v", folder, sub, moved, search)
+	}
+	if txt, isErr := call(t, modern, "create_folder", map[string]any{"name": "x", "parent": "Nowhere"}); !isErr || !strings.Contains(txt, "unknown mailbox") {
+		t.Fatalf("unknown parent accepted: %s", txt)
+	}
 	callJSON(t, modern, "delete_emails", map[string]any{"ids": []string{report}}, &moved)
 	if !strings.EqualFold(moved.Mailbox, "Deleted Items") && !strings.EqualFold(moved.Mailbox, "Trash") {
 		t.Fatalf("trash: %+v", moved)

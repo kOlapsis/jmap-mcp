@@ -6,72 +6,42 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:mail",
-      "urn:ietf:params:jmap:vacationresponse"
+      "urn:ietf:params:jmap:submission"
     ],
     "methodCalls": [
       [
-        "VacationResponse/set",
+        "Identity/get",
         {
-          "accountId": "c",
-          "update": {
-            "singleton": {
-              "isEnabled": true,
-              "subject": "Away",
-              "textBody": "Back on Monday",
-              "toDate": "2026-12-01T00:00:00Z"
-            }
-          }
+          "accountId": "c"
         },
         "0"
-      ],
-      [
-        "VacationResponse/get",
-        {
-          "accountId": "c",
-          "ids": [
-            "singleton"
-          ]
-        },
-        "1"
       ]
     ]
   },
   "response": {
     "methodResponses": [
       [
-        "VacationResponse/set",
+        "Identity/get",
         {
           "accountId": "c",
-          "oldState": "n",
-          "newState": "scq",
-          "updated": {
-            "singleton": null
-          }
-        },
-        "0"
-      ],
-      [
-        "VacationResponse/get",
-        {
-          "accountId": "c",
-          "state": "scq",
+          "state": "sb2",
           "list": [
             {
-              "id": "singleton",
-              "isEnabled": true,
-              "fromDate": null,
-              "toDate": "2026-12-01T00:00:00Z",
-              "subject": "Away",
-              "textBody": "Back on Monday",
-              "htmlBody": null
+              "id": "b",
+              "name": "alice@example.test",
+              "email": "alice@example.test",
+              "replyTo": null,
+              "bcc": null,
+              "textSignature": "",
+              "htmlSignature": "",
+              "mayDelete": true
             }
           ],
           "notFound": []
         },
-        "1"
+        "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

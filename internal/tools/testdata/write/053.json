@@ -1,7 +1,13 @@
 {
-  "method": "GET",
-  "path": "/jmap/download/c/cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo/newsletters.sieve",
+  "method": "POST",
+  "path": "/jmap/upload/c/",
   "status": 200,
-  "content_type": "application/sieve",
-  "body": "cmVxdWlyZSAiZmlsZWludG8iOwppZiBoZWFkZXIgOmNvbnRhaW5zICJzdWJqZWN0IiAibmV3c2xldHRlciIgeyBmaWxlaW50byAiQXJjaGl2ZSI7IH0K"
+  "content_type": "application/json; charset=utf-8",
+  "request_body": "aWYgYnJva2VuIHs=",
+  "response": {
+    "accountId": "c",
+    "blobId": "edx9utwusjxu7yxdvtowy2wtrplbbq2ro2ey0zgowhgjscpt1kpicauz79x0mbq",
+    "type": "application/sieve",
+    "size": 11
+  }
 }

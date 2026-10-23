@@ -10,17 +10,16 @@
     ],
     "methodCalls": [
       [
-        "Email/get",
+        "Mailbox/set",
         {
           "accountId": "c",
-          "ids": [
-            "eaaaaab"
-          ],
-          "properties": [
-            "id",
-            "subject",
-            "from"
-          ]
+          "create": {
+            "new": {
+              "name": "2026",
+              "parentId": "h",
+              "isSubscribed": true
+            }
+          }
         },
         "0"
       ]
@@ -29,27 +28,20 @@
   "response": {
     "methodResponses": [
       [
-        "Email/get",
+        "Mailbox/set",
         {
           "accountId": "c",
-          "state": "sbi",
-          "list": [
-            {
-              "id": "eaaaaab",
-              "subject": "Quarterly report",
-              "from": [
-                {
-                  "name": "Bob Martin",
-                  "email": "bob@example.org"
-                }
-              ]
+          "oldState": "sbi",
+          "newState": "sbm",
+          "created": {
+            "new": {
+              "id": "i"
             }
-          ],
-          "notFound": []
+          }
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

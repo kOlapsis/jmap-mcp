@@ -10,66 +10,17 @@
     ],
     "methodCalls": [
       [
-        "Email/set",
+        "Email/get",
         {
           "accountId": "c",
-          "create": {
-            "draft": {
-              "mailboxIds": {
-                "d": true
-              },
-              "keywords": {
-                "$draft": true,
-                "$seen": true
-              },
-              "inReplyTo": [
-                "kickoff-1@example.org"
-              ],
-              "references": [
-                "kickoff-1@example.org"
-              ],
-              "from": [
-                {
-                  "name": "alice@example.test",
-                  "email": "alice@example.test"
-                }
-              ],
-              "to": [
-                {
-                  "name": "Carol",
-                  "email": "carol@example.org"
-                }
-              ],
-              "cc": [
-                {
-                  "name": "Dave",
-                  "email": "dave@example.org"
-                }
-              ],
-              "subject": "Re: Project kickoff",
-              "sentAt": "2026-10-20T12:00:00Z",
-              "bodyValues": {
-                "body": {
-                  "value": "See you Friday.\n\nOn Wed, 7 Oct 2026 08:00 UTC, Carol \u003ccarol@example.org\u003e wrote:\n\u003e Can we meet on Friday to start the project?\n",
-                  "isTruncated": false
-                }
-              },
-              "textBody": [
-                {
-                  "partId": "body",
-                  "type": "text/plain"
-                }
-              ],
-              "attachments": [
-                {
-                  "blobId": "ed3eazvl0knf0fcockeihpvgucularrlciappke97lmpahza2rqd7auv9lw0mbq",
-                  "name": "agenda.txt",
-                  "type": "text/plain",
-                  "disposition": "attachment"
-                }
-              ]
-            }
-          }
+          "ids": [
+            "eaaaaab"
+          ],
+          "properties": [
+            "id",
+            "subject",
+            "from"
+          ]
         },
         "0"
       ]
@@ -78,23 +29,27 @@
   "response": {
     "methodResponses": [
       [
-        "Email/set",
+        "Email/get",
         {
           "accountId": "c",
-          "oldState": "sbm",
-          "newState": "sbu",
-          "created": {
-            "draft": {
-              "id": "maaaaah",
-              "threadId": "d",
-              "blobId": "cac2jhdmkj77loy1ei7gytwmmjgg2d2r0mbnsnuxha7sic2mycvhmaqaa2",
-              "size": 989
+          "state": "sbu",
+          "list": [
+            {
+              "id": "eaaaaab",
+              "subject": "Quarterly report",
+              "from": [
+                {
+                  "name": "Bob Martin",
+                  "email": "bob@example.org"
+                }
+              ]
             }
-          }
+          ],
+          "notFound": []
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

@@ -10,10 +10,9 @@
     ],
     "methodCalls": [
       [
-        "SieveScript/set",
+        "SieveScript/get",
         {
-          "accountId": "c",
-          "onSuccessDeactivateScript": true
+          "accountId": "c"
         },
         "0"
       ]
@@ -22,15 +21,23 @@
   "response": {
     "methodResponses": [
       [
-        "SieveScript/set",
+        "SieveScript/get",
         {
           "accountId": "c",
-          "oldState": "scu",
-          "newState": "scu"
+          "state": "sc2",
+          "list": [
+            {
+              "id": "b",
+              "name": "vacation",
+              "blobId": "cffl371evjql1zja0aiunlnutlt1qpfhorq9kxlhcd0sri02jccv1aqfaeapgai",
+              "isActive": true
+            }
+          ],
+          "notFound": []
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

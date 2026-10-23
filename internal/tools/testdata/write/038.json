@@ -6,27 +6,13 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:submission",
-      "urn:ietf:params:jmap:mail"
+      "urn:ietf:params:jmap:submission"
     ],
     "methodCalls": [
       [
-        "EmailSubmission/set",
+        "Identity/get",
         {
-          "accountId": "c",
-          "create": {
-            "send": {
-              "identityId": "b",
-              "emailId": "beaaaaaj"
-            }
-          },
-          "onSuccessUpdateEmail": {
-            "#send": {
-              "keywords/$draft": null,
-              "mailboxIds/d": null,
-              "mailboxIds/e": true
-            }
-          }
+          "accountId": "c"
         },
         "0"
       ]
@@ -35,33 +21,27 @@
   "response": {
     "methodResponses": [
       [
-        "EmailSubmission/set",
+        "Identity/get",
         {
           "accountId": "c",
-          "newState": "sci",
-          "created": {
-            "send": {
-              "id": "c",
-              "sendAt": "2026-10-23T13:20:05Z",
-              "undoStatus": "pending"
+          "state": "sb2",
+          "list": [
+            {
+              "id": "b",
+              "name": "alice@example.test",
+              "email": "alice@example.test",
+              "replyTo": null,
+              "bcc": null,
+              "textSignature": "",
+              "htmlSignature": "",
+              "mayDelete": true
             }
-          }
-        },
-        "0"
-      ],
-      [
-        "Email/set",
-        {
-          "accountId": "c",
-          "oldState": "sce",
-          "newState": "scm",
-          "updated": {
-            "beaaaaaj": null
-          }
+          ],
+          "notFound": []
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

@@ -6,13 +6,49 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:sieve"
+      "urn:ietf:params:jmap:mail"
     ],
     "methodCalls": [
       [
-        "SieveScript/get",
+        "Email/set",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "create": {
+            "draft": {
+              "mailboxIds": {
+                "d": true
+              },
+              "keywords": {
+                "$draft": true,
+                "$seen": true
+              },
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "email": "bob@example.test"
+                }
+              ],
+              "subject": "Draft then send",
+              "sentAt": "2026-10-20T12:00:00Z",
+              "bodyValues": {
+                "body": {
+                  "value": "Hello",
+                  "isTruncated": false
+                }
+              },
+              "textBody": [
+                {
+                  "partId": "body",
+                  "type": "text/plain"
+                }
+              ]
+            }
+          }
         },
         "0"
       ]
@@ -21,23 +57,23 @@
   "response": {
     "methodResponses": [
       [
-        "SieveScript/get",
+        "Email/set",
         {
           "accountId": "c",
-          "state": "scq",
-          "list": [
-            {
-              "id": "b",
-              "name": "vacation",
-              "blobId": "cffl371evjql1zja0aiunlnutlt1qpfhorq9kxlhcd0sri02jccv1aqfaeapgai",
-              "isActive": true
+          "oldState": "scm",
+          "newState": "scq",
+          "created": {
+            "draft": {
+              "id": "beaaaaaj",
+              "threadId": "j",
+              "blobId": "ccdanjla1cx777mu2dtnlrztliaid2yygwirlpwuoitygusfwm9x7aqabe",
+              "size": 323
             }
-          ],
-          "notFound": []
+          }
         },
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

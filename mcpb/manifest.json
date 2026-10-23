@@ -53,6 +53,7 @@
     { "name": "get_attachment", "description": "Get an attachment" },
     { "name": "update_emails", "description": "Mark emails read, unread, flagged or unflagged" },
     { "name": "move_emails", "description": "Move emails to a mailbox" },
+    { "name": "create_folder", "description": "Create a folder" },
     { "name": "delete_emails", "description": "Move emails to the trash, or delete them after confirmation" },
     { "name": "create_draft", "description": "Create a draft or a reply" }
   ],

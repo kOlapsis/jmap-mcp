@@ -24,18 +24,18 @@
         "Mailbox/get",
         {
           "accountId": "c",
-          "state": "sbm",
+          "state": "sbq",
           "list": [
             {
-              "id": "b",
-              "name": "Deleted Items",
-              "parentId": null,
-              "role": "trash",
+              "id": "i",
+              "name": "2026",
+              "parentId": "h",
+              "role": null,
               "sortOrder": 0,
               "isSubscribed": true,
-              "totalEmails": 0,
+              "totalEmails": 1,
               "unreadEmails": 0,
-              "totalThreads": 0,
+              "totalThreads": 1,
               "unreadThreads": 0,
               "myRights": {
                 "mayReadItems": true,
@@ -75,10 +75,58 @@
               }
             },
             {
+              "id": "c",
+              "name": "Junk Mail",
+              "parentId": null,
+              "role": "junk",
+              "sortOrder": 0,
+              "isSubscribed": true,
+              "totalEmails": 0,
+              "unreadEmails": 0,
+              "totalThreads": 0,
+              "unreadThreads": 0,
+              "myRights": {
+                "mayReadItems": true,
+                "mayAddItems": true,
+                "mayRemoveItems": true,
+                "maySetSeen": true,
+                "maySetKeywords": true,
+                "mayCreateChild": true,
+                "mayRename": true,
+                "maySubmit": true,
+                "mayDelete": true,
+                "mayShare": true
+              }
+            },
+            {
               "id": "d",
               "name": "Drafts",
               "parentId": null,
               "role": "drafts",
+              "sortOrder": 0,
+              "isSubscribed": true,
+              "totalEmails": 0,
+              "unreadEmails": 0,
+              "totalThreads": 0,
+              "unreadThreads": 0,
+              "myRights": {
+                "mayReadItems": true,
+                "mayAddItems": true,
+                "mayRemoveItems": true,
+                "maySetSeen": true,
+                "maySetKeywords": true,
+                "mayCreateChild": true,
+                "mayRename": true,
+                "maySubmit": true,
+                "mayDelete": true,
+                "mayShare": true
+              }
+            },
+            {
+              "id": "b",
+              "name": "Deleted Items",
+              "parentId": null,
+              "role": "trash",
               "sortOrder": 0,
               "isSubscribed": true,
               "totalEmails": 0,
@@ -123,10 +171,10 @@
               }
             },
             {
-              "id": "c",
-              "name": "Junk Mail",
+              "id": "h",
+              "name": "Projects",
               "parentId": null,
-              "role": "junk",
+              "role": null,
               "sortOrder": 0,
               "isSubscribed": true,
               "totalEmails": 0,
@@ -152,6 +200,6 @@
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

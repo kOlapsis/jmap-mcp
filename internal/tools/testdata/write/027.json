@@ -6,13 +6,54 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:submission"
+      "urn:ietf:params:jmap:mail"
     ],
     "methodCalls": [
       [
-        "Identity/get",
+        "Email/get",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "ids": [
+            "maaaaad"
+          ],
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "sentAt",
+            "from",
+            "to",
+            "cc",
+            "bcc",
+            "replyTo",
+            "sender",
+            "subject",
+            "messageId",
+            "inReplyTo",
+            "references",
+            "textBody",
+            "htmlBody",
+            "attachments",
+            "bodyValues",
+            "size",
+            "hasAttachment",
+            "preview"
+          ],
+          "bodyProperties": [
+            "partId",
+            "blobId",
+            "size",
+            "name",
+            "type",
+            "charset",
+            "disposition",
+            "cid"
+          ],
+          "fetchTextBodyValues": true,
+          "fetchHTMLBodyValues": true,
+          "maxBodyValueBytes": 81024
         },
         "0"
       ]
@@ -21,20 +62,82 @@
   "response": {
     "methodResponses": [
       [
-        "Identity/get",
+        "Email/get",
         {
           "accountId": "c",
-          "state": "sbq",
+          "state": "sby",
           "list": [
             {
-              "id": "b",
-              "name": "alice@example.test",
-              "email": "alice@example.test",
-              "replyTo": null,
+              "id": "maaaaad",
+              "threadId": "d",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-07T08:00:00Z",
+              "sentAt": "2026-10-07T08:00:00Z",
+              "from": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Alice",
+                  "email": "alice@example.test"
+                }
+              ],
+              "cc": [
+                {
+                  "name": "Dave",
+                  "email": "dave@example.org"
+                }
+              ],
               "bcc": null,
-              "textSignature": "",
-              "htmlSignature": "",
-              "mayDelete": true
+              "replyTo": null,
+              "sender": null,
+              "subject": "Project kickoff",
+              "messageId": [
+                "kickoff-1@example.org"
+              ],
+              "inReplyTo": null,
+              "references": null,
+              "textBody": [
+                {
+                  "partId": "0",
+                  "blobId": "cemolkyexux021zvar9ipsbywkowq3rxisdrepg3tuaoismggzz7iaqaapxqcli",
+                  "size": 45,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "htmlBody": [
+                {
+                  "partId": "0",
+                  "blobId": "cemolkyexux021zvar9ipsbywkowq3rxisdrepg3tuaoismggzz7iaqaapxqcli",
+                  "size": 45,
+                  "name": null,
+                  "type": "text/plain",
+                  "charset": "utf-8",
+                  "disposition": null,
+                  "cid": null
+                }
+              ],
+              "attachments": [],
+              "bodyValues": {
+                "0": {
+                  "isEncodingProblem": false,
+                  "isTruncated": false,
+                  "value": "Can we meet on Friday to start the project?\n"
+                }
+              },
+              "size": 284,
+              "hasAttachment": false,
+              "preview": "Can we meet on Friday to start the project?\n"
             }
           ],
           "notFound": []
@@ -42,6 +145,6 @@
         "0"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

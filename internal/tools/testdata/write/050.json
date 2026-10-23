@@ -6,44 +6,72 @@
   "request": {
     "using": [
       "urn:ietf:params:jmap:core",
-      "urn:ietf:params:jmap:sieve"
+      "urn:ietf:params:jmap:mail",
+      "urn:ietf:params:jmap:vacationresponse"
     ],
     "methodCalls": [
       [
-        "SieveScript/set",
+        "VacationResponse/set",
         {
           "accountId": "c",
-          "create": {
-            "new": {
-              "name": "newsletters",
-              "blobId": "edknvyopkkglsxnau2kvit2bdndxgpgwcmnnqftxyistjbirpnwvuauv9lw0mbq"
+          "update": {
+            "singleton": {
+              "isEnabled": true,
+              "subject": "Away",
+              "textBody": "Back on Monday",
+              "toDate": "2026-12-01T00:00:00Z"
             }
-          },
-          "onSuccessActivateScript": "#new"
+          }
         },
         "0"
+      ],
+      [
+        "VacationResponse/get",
+        {
+          "accountId": "c",
+          "ids": [
+            "singleton"
+          ]
+        },
+        "1"
       ]
     ]
   },
   "response": {
     "methodResponses": [
       [
-        "SieveScript/set",
+        "VacationResponse/set",
         {
           "accountId": "c",
-          "oldState": "scq",
-          "newState": "scu",
-          "created": {
-            "new": {
-              "id": "c",
-              "blobId": "cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo",
-              "isActive": true
-            }
+          "oldState": "n",
+          "newState": "sc2",
+          "updated": {
+            "singleton": null
           }
         },
         "0"
+      ],
+      [
+        "VacationResponse/get",
+        {
+          "accountId": "c",
+          "state": "sc2",
+          "list": [
+            {
+              "id": "singleton",
+              "isEnabled": true,
+              "fromDate": null,
+              "toDate": "2026-12-01T00:00:00Z",
+              "subject": "Away",
+              "textBody": "Back on Monday",
+              "htmlBody": null
+            }
+          ],
+          "notFound": []
+        },
+        "1"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }

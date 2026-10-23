@@ -10,148 +10,135 @@
     ],
     "methodCalls": [
       [
-        "Mailbox/get",
+        "Email/query",
         {
-          "accountId": "c"
+          "accountId": "c",
+          "filter": {
+            "subject": "Project kickoff"
+          },
+          "sort": [
+            {
+              "property": "receivedAt",
+              "isAscending": true
+            }
+          ],
+          "limit": 20,
+          "calculateTotal": true
         },
         "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "from",
+            "to",
+            "subject",
+            "preview",
+            "hasAttachment",
+            "attachments",
+            "size"
+          ],
+          "bodyProperties": [
+            "blobId"
+          ],
+          "#ids": {
+            "resultOf": "0",
+            "name": "Email/query",
+            "path": "/ids"
+          }
+        },
+        "1"
       ]
     ]
   },
   "response": {
     "methodResponses": [
       [
-        "Mailbox/get",
+        "Email/query",
         {
           "accountId": "c",
-          "state": "sbu",
+          "queryState": "sby",
+          "canCalculateChanges": true,
+          "position": 0,
+          "ids": [
+            "maaaaad",
+            "maaaaae"
+          ],
+          "total": 2
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sby",
           "list": [
             {
-              "id": "b",
-              "name": "Deleted Items",
-              "parentId": null,
-              "role": "trash",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 0,
-              "unreadEmails": 0,
-              "totalThreads": 0,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
+              "id": "maaaaad",
+              "threadId": "d",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-07T08:00:00Z",
+              "from": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Alice",
+                  "email": "alice@example.test"
+                }
+              ],
+              "subject": "Project kickoff",
+              "preview": "Can we meet on Friday to start the project?\n",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 284
             },
             {
-              "id": "a",
-              "name": "Inbox",
-              "parentId": null,
-              "role": "inbox",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 5,
-              "unreadEmails": 5,
-              "totalThreads": 4,
-              "unreadThreads": 4,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "d",
-              "name": "Drafts",
-              "parentId": null,
-              "role": "drafts",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 1,
-              "unreadEmails": 0,
-              "totalThreads": 1,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "e",
-              "name": "Sent Items",
-              "parentId": null,
-              "role": "sent",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 0,
-              "unreadEmails": 0,
-              "totalThreads": 0,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
-            },
-            {
-              "id": "c",
-              "name": "Junk Mail",
-              "parentId": null,
-              "role": "junk",
-              "sortOrder": 0,
-              "isSubscribed": true,
-              "totalEmails": 0,
-              "unreadEmails": 0,
-              "totalThreads": 0,
-              "unreadThreads": 0,
-              "myRights": {
-                "mayReadItems": true,
-                "mayAddItems": true,
-                "mayRemoveItems": true,
-                "maySetSeen": true,
-                "maySetKeywords": true,
-                "mayCreateChild": true,
-                "mayRename": true,
-                "maySubmit": true,
-                "mayDelete": true,
-                "mayShare": true
-              }
+              "id": "maaaaae",
+              "threadId": "d",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-07T09:30:00Z",
+              "from": [
+                {
+                  "name": "Alice",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "subject": "Re: Project kickoff",
+              "preview": "Friday works for me.\n",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 341
             }
           ],
           "notFound": []
         },
-        "0"
+        "1"
       ]
     ],
-    "sessionState": "ce8baeda"
+    "sessionState": "606ebb50"
   }
 }
