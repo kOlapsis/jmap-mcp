@@ -36,7 +36,7 @@
       "urn:ietf:params:jmap:quota": {},
       "urn:ietf:params:jmap:emailpush": {},
       "urn:ietf:params:jmap:webpush-vapid": {
-        "applicationServerKey": "BMZhV9HjaHMqLNJ5jf-HwCBF9MToQ85Wo_n9DtUbVTxpnKNEFQGuN_w4iOkX4YRFbYoAT9X2A62EZAcE7JTIXiQ"
+        "applicationServerKey": "BKowuPOPOFZKg3ASLEVReqpMOtd7LR3jaaquLnItIFptYm7_rL8boQEk3g3nUb4DZvIq5wZaF4u7XEMMmw5M_rs"
       },
       "urn:ietf:params:jmap:websocket": {
         "url": "wss://mail.example.test/jmap/ws",
@@ -249,6 +249,6 @@
     "downloadUrl": "https://mail.example.test/jmap/download/{accountId}/{blobId}/{name}?accept={type}",
     "uploadUrl": "https://mail.example.test/jmap/upload/{accountId}/",
     "eventSourceUrl": "https://mail.example.test/jmap/eventsource/?types={types}\u0026closeafter={closeafter}\u0026ping={ping}",
-    "state": "9af353d7"
+    "state": "458db01a"
   }
 }

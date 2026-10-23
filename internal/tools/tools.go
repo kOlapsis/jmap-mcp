@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/mikluko/jmap"
@@ -48,6 +49,7 @@ type Options struct {
 	Mode        string
 	Version     string
 	Logger      *slog.Logger
+	Now         func() time.Time
 }
 
 // Server is an MCP server whose optional tools follow the capabilities of the connected accounts.
@@ -71,6 +73,9 @@ Sending and permanent deletion always require the user's explicit confirmation.`
 func New(opts Options) *Server {
 	if opts.Logger == nil {
 		opts.Logger = slog.New(slog.DiscardHandler)
+	}
+	if opts.Now == nil {
+		opts.Now = time.Now
 	}
 	s := &Server{
 		Server: mcp.NewServer(&mcp.Implementation{Name: "jmap-mcp", Title: "JMAP mail", Version: opts.Version},

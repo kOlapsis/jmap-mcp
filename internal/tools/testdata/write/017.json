@@ -1,0 +1,144 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "filter": {
+            "subject": "Project kickoff"
+          },
+          "sort": [
+            {
+              "property": "receivedAt",
+              "isAscending": true
+            }
+          ],
+          "limit": 20,
+          "calculateTotal": true
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "from",
+            "to",
+            "subject",
+            "preview",
+            "hasAttachment",
+            "attachments",
+            "size"
+          ],
+          "bodyProperties": [
+            "blobId"
+          ],
+          "#ids": {
+            "resultOf": "0",
+            "name": "Email/query",
+            "path": "/ids"
+          }
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "queryState": "sbm",
+          "canCalculateChanges": true,
+          "position": 0,
+          "ids": [
+            "maaaaad",
+            "maaaaae"
+          ],
+          "total": 2
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sbm",
+          "list": [
+            {
+              "id": "maaaaad",
+              "threadId": "d",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-07T08:00:00Z",
+              "from": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Alice",
+                  "email": "alice@example.test"
+                }
+              ],
+              "subject": "Project kickoff",
+              "preview": "Can we meet on Friday to start the project?\n",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 284
+            },
+            {
+              "id": "maaaaae",
+              "threadId": "d",
+              "mailboxIds": {
+                "a": true
+              },
+              "keywords": {},
+              "receivedAt": "2026-10-07T09:30:00Z",
+              "from": [
+                {
+                  "name": "Alice",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Carol",
+                  "email": "carol@example.org"
+                }
+              ],
+              "subject": "Re: Project kickoff",
+              "preview": "Friday works for me.\n",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 341
+            }
+          ],
+          "notFound": []
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

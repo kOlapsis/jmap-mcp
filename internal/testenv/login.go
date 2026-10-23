@@ -78,6 +78,8 @@ func (r *recorder) RoundTrip(req *http.Request) (*http.Response, error) {
 	ex := Exchange{Method: req.Method, Path: req.URL.Path, Status: resp.StatusCode, ContentType: resp.Header.Get("Content-Type")}
 	if json.Valid(reqBody) {
 		ex.Request = reqBody
+	} else if len(reqBody) > 0 {
+		ex.RequestBody = reqBody
 	}
 	if strings.Contains(ex.ContentType, "json") && json.Valid(respBody) {
 		ex.Response = respBody

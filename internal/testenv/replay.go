@@ -1,13 +1,16 @@
 package testenv
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -18,6 +21,7 @@ type Exchange struct {
 	Status      int             `json:"status"`
 	ContentType string          `json:"content_type,omitempty"`
 	Request     json.RawMessage `json:"request,omitempty"`
+	RequestBody []byte          `json:"request_body,omitempty"`
 	Response    json.RawMessage `json:"response,omitempty"`
 	Body        []byte          `json:"body,omitempty"`
 }
@@ -39,14 +43,28 @@ func Replay(t testing.TB, dir string) string {
 		}
 		exs = append(exs, ex)
 	}
+	used := make([]bool, len(exs))
+	var mu sync.Mutex
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body json.RawMessage
-		_ = json.NewDecoder(r.Body).Decode(&body)
-		for _, ex := range exs {
-			if ex.Method != r.Method || ex.Path != r.URL.Path || (ex.Request != nil && callsKey(ex.Request) != callsKey(body)) {
+		raw, _ := io.ReadAll(r.Body)
+		mu.Lock()
+		defer mu.Unlock()
+		match := -1
+		for i, ex := range exs {
+			if ex.Method != r.Method || ex.Path != r.URL.Path ||
+				(ex.Request != nil && callsKey(ex.Request) != callsKey(raw)) ||
+				(ex.RequestBody != nil && !bytes.Equal(ex.RequestBody, raw)) {
 				continue
 			}
+			match = i
+			if !used[i] {
+				break
+			}
+		}
+		if match >= 0 {
+			used[match] = true
+			ex := exs[match]
 			w.Header().Set("Content-Type", ex.ContentType)
 			w.WriteHeader(ex.Status)
 			if ex.Response != nil {
@@ -56,7 +74,7 @@ func Replay(t testing.TB, dir string) string {
 			}
 			return
 		}
-		t.Errorf("replay: no recorded exchange for %s %s %s", r.Method, r.URL.Path, body)
+		t.Errorf("replay: no recorded exchange for %s %s %s", r.Method, r.URL.Path, raw)
 		http.Error(w, "not recorded", http.StatusNotFound)
 	}))
 	t.Cleanup(srv.Close)

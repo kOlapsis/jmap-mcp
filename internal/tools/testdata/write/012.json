@@ -1,0 +1,45 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "update": {
+            "eaaaaab": {
+              "mailboxIds": {
+                "b": true
+              }
+            }
+          }
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "sbe",
+          "newState": "sbi",
+          "updated": {
+            "eaaaaab": null
+          }
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "method": "POST",
+  "path": "/jmap/upload/c/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request_body": "MS4gU2NvcGUKMi4gUGxhbm5pbmcK",
+  "response": {
+    "accountId": "c",
+    "blobId": "ed3eazvl0knf0fcockeihpvgucularrlciappke97lmpahza2rqd7auv9lw0mbq",
+    "type": "text/plain; charset=utf-8",
+    "size": 21
+  }
+}

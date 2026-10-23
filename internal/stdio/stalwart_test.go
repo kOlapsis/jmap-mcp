@@ -76,7 +76,7 @@ func TestStalwartLocalAccounts(t *testing.T) {
 		t.Fatalf("connect_account: %v %+v", err, res)
 	}
 	tl, _ := cs.ListTools(ctx, nil)
-	if !hasTool(tl, "list_identities") {
+	if !hasTool(tl, "list_identities") || !hasTool(tl, "vacation_response") || !hasTool(tl, "sieve_scripts") {
 		t.Fatalf("optional tools not registered after connecting: %d tools", len(tl.Tools))
 	}
 

@@ -34,13 +34,19 @@ func (b *staticBackend) AttachmentLink(_ context.Context, _ *mcp.CallToolRequest
 // connect starts the server and an in-memory client; elicit may be nil for a client without elicitation.
 func connect(t *testing.T, s *Server, elicit func(context.Context, *mcp.ElicitRequest) (*mcp.ElicitResult, error)) *mcp.ClientSession {
 	t.Helper()
+	return connectVersion(t, s, elicit, "")
+}
+
+// connectVersion is connect with a given protocol version; empty means the latest.
+func connectVersion(t *testing.T, s *Server, elicit func(context.Context, *mcp.ElicitRequest) (*mcp.ElicitResult, error), version string) *mcp.ClientSession {
+	t.Helper()
 	ctx := context.Background()
 	s.Sync(ctx)
 	ct, st := mcp.NewInMemoryTransports()
 	if _, err := s.Connect(ctx, st, nil); err != nil {
 		t.Fatal(err)
 	}
-	cs, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, &mcp.ClientOptions{ElicitationHandler: elicit}).Connect(ctx, ct, nil)
+	cs, err := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, &mcp.ClientOptions{ElicitationHandler: elicit}).Connect(ctx, ct, &mcp.ClientSessionOptions{ProtocolVersion: version})
 	if err != nil {
 		t.Fatal(err)
 	}

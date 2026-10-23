@@ -26,6 +26,18 @@ All notable changes to this project are documented here. The format follows
 - `connect_account` tool; the email address is asked by elicitation when the
   client supports it. Several accounts can be connected; when no default is
   set, the account is asked once and remembered.
+- Write tools: `update_emails` (read, flagged), `move_emails` (by id, role or
+  name), `delete_emails` (trash by default, permanent destruction only after
+  confirmation), `create_draft` (replies with In-Reply-To, References, quote
+  and reply-all recipients, attachments uploaded to the server) and
+  `send_email` (disabled unless `--enable-send`; every message is confirmed by
+  the user through elicitation, or by an explicit `confirm` argument when the
+  client cannot ask).
+- Optional tools registered only when the server announces the capability:
+  `list_identities` and `send_email` (submission), `vacation_response`,
+  `sieve_scripts` (RFC 9661, changes confirmed by the user).
+- Elicitation works with clients on the 2026-07-28 protocol (multi round-trip
+  requests) and with older clients (direct `elicitation/create`).
 - Encrypted SQLite store (AES-GCM, master key generated on first start and
   kept in the OS keyring when available, otherwise in a 0600 file).
 - Integration tests against Stalwart in Docker, and unit tests replaying the

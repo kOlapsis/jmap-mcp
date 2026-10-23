@@ -1,0 +1,128 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail",
+      "urn:ietf:params:jmap:submission"
+    ],
+    "methodCalls": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "create": {
+            "draft": {
+              "mailboxIds": {
+                "d": true
+              },
+              "keywords": {
+                "$draft": true,
+                "$seen": true
+              },
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Bob",
+                  "email": "bob@example.test"
+                }
+              ],
+              "subject": "Lunch?",
+              "sentAt": "2026-10-20T12:00:00Z",
+              "bodyValues": {
+                "body": {
+                  "value": "Noon?",
+                  "isTruncated": false
+                }
+              },
+              "textBody": [
+                {
+                  "partId": "body",
+                  "type": "text/plain"
+                }
+              ]
+            }
+          }
+        },
+        "0"
+      ],
+      [
+        "EmailSubmission/set",
+        {
+          "accountId": "c",
+          "create": {
+            "send": {
+              "identityId": "b",
+              "emailId": "#draft"
+            }
+          },
+          "onSuccessUpdateEmail": {
+            "#send": {
+              "keywords/$draft": null,
+              "mailboxIds/d": null,
+              "mailboxIds/e": true
+            }
+          }
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "sbu",
+          "newState": "sby",
+          "created": {
+            "draft": {
+              "id": "baaaaaai",
+              "threadId": "i",
+              "blobId": "cdhag7233sr1zqxc3gjuqzwhkkxw1e0w0hw2lq9qoyoo2e3zextgyaqaba",
+              "size": 321
+            }
+          }
+        },
+        "0"
+      ],
+      [
+        "EmailSubmission/set",
+        {
+          "accountId": "c",
+          "newState": "sb2",
+          "created": {
+            "send": {
+              "id": "b",
+              "sendAt": "2026-10-23T13:20:05Z",
+              "undoStatus": "pending"
+            }
+          }
+        },
+        "1"
+      ],
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "sby",
+          "newState": "sca",
+          "updated": {
+            "baaaaaai": null
+          }
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

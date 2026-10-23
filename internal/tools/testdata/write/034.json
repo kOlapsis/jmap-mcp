@@ -1,0 +1,79 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "create": {
+            "draft": {
+              "mailboxIds": {
+                "d": true
+              },
+              "keywords": {
+                "$draft": true,
+                "$seen": true
+              },
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "email": "bob@example.test"
+                }
+              ],
+              "subject": "Draft then send",
+              "sentAt": "2026-10-20T12:00:00Z",
+              "bodyValues": {
+                "body": {
+                  "value": "Hello",
+                  "isTruncated": false
+                }
+              },
+              "textBody": [
+                {
+                  "partId": "body",
+                  "type": "text/plain"
+                }
+              ]
+            }
+          }
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/set",
+        {
+          "accountId": "c",
+          "oldState": "sca",
+          "newState": "sce",
+          "created": {
+            "draft": {
+              "id": "beaaaaaj",
+              "threadId": "j",
+              "blobId": "cafg7mp9dha07lrvd0cpypnxpaqqm19ph9p1uucnsrm9qot09khryaqabe",
+              "size": 323
+            }
+          }
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

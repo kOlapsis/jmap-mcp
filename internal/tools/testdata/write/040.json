@@ -1,0 +1,148 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "filter": {
+            "inMailbox": "e"
+          },
+          "sort": [
+            {
+              "property": "receivedAt",
+              "isAscending": false
+            }
+          ],
+          "limit": 20,
+          "calculateTotal": true
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "properties": [
+            "id",
+            "threadId",
+            "mailboxIds",
+            "keywords",
+            "receivedAt",
+            "from",
+            "to",
+            "subject",
+            "preview",
+            "hasAttachment",
+            "attachments",
+            "size"
+          ],
+          "bodyProperties": [
+            "blobId"
+          ],
+          "#ids": {
+            "resultOf": "0",
+            "name": "Email/query",
+            "path": "/ids"
+          }
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/query",
+        {
+          "accountId": "c",
+          "queryState": "scm",
+          "canCalculateChanges": true,
+          "position": 0,
+          "ids": [
+            "baaaaaai",
+            "beaaaaaj"
+          ],
+          "total": 2
+        },
+        "0"
+      ],
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "scm",
+          "list": [
+            {
+              "id": "baaaaaai",
+              "threadId": "i",
+              "mailboxIds": {
+                "e": true
+              },
+              "keywords": {
+                "$seen": true
+              },
+              "receivedAt": "2026-10-23T13:20:05Z",
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": "Bob",
+                  "email": "bob@example.test"
+                }
+              ],
+              "subject": "Lunch?",
+              "preview": "Noon?",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 321
+            },
+            {
+              "id": "beaaaaaj",
+              "threadId": "j",
+              "mailboxIds": {
+                "e": true
+              },
+              "keywords": {
+                "$seen": true
+              },
+              "receivedAt": "2026-10-23T13:20:05Z",
+              "from": [
+                {
+                  "name": "alice@example.test",
+                  "email": "alice@example.test"
+                }
+              ],
+              "to": [
+                {
+                  "name": null,
+                  "email": "bob@example.test"
+                }
+              ],
+              "subject": "Draft then send",
+              "preview": "Hello",
+              "hasAttachment": false,
+              "attachments": [],
+              "size": 323
+            }
+          ],
+          "notFound": []
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

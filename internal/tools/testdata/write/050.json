@@ -1,0 +1,49 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:sieve"
+    ],
+    "methodCalls": [
+      [
+        "SieveScript/set",
+        {
+          "accountId": "c",
+          "create": {
+            "new": {
+              "name": "newsletters",
+              "blobId": "edknvyopkkglsxnau2kvit2bdndxgpgwcmnnqftxyistjbirpnwvuauv9lw0mbq"
+            }
+          },
+          "onSuccessActivateScript": "#new"
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "SieveScript/set",
+        {
+          "accountId": "c",
+          "oldState": "scq",
+          "newState": "scu",
+          "created": {
+            "new": {
+              "id": "c",
+              "blobId": "cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo",
+              "isActive": true
+            }
+          }
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

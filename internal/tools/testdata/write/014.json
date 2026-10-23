@@ -1,0 +1,55 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail"
+    ],
+    "methodCalls": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "ids": [
+            "eaaaaab"
+          ],
+          "properties": [
+            "id",
+            "subject",
+            "from"
+          ]
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "Email/get",
+        {
+          "accountId": "c",
+          "state": "sbi",
+          "list": [
+            {
+              "id": "eaaaaab",
+              "subject": "Quarterly report",
+              "from": [
+                {
+                  "name": "Bob Martin",
+                  "email": "bob@example.org"
+                }
+              ]
+            }
+          ],
+          "notFound": []
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

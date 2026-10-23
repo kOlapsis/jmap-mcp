@@ -82,3 +82,10 @@ func readScenario(t *testing.T, acct *Account) {
 		t.Fatalf("image attachment: %s", txt)
 	}
 }
+
+// TestWriteToolsReplay runs the write scenario against recorded exchanges
+// (refresh them with: JMAP_MCP_RECORD=$PWD/internal/tools/testdata/write go test -tags integration -run TestStalwartWriteTools ./internal/tools).
+func TestWriteToolsReplay(t *testing.T) {
+	url := testenv.Replay(t, "testdata/write")
+	writeScenario(t, &Account{Email: "alice@example.test", Client: &jmapc.Client{HTTP: http.DefaultClient, SessionURL: url}}, "bob@example.test", nil)
+}

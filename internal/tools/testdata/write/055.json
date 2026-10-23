@@ -1,0 +1,49 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:sieve"
+    ],
+    "methodCalls": [
+      [
+        "SieveScript/get",
+        {
+          "accountId": "c"
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "SieveScript/get",
+        {
+          "accountId": "c",
+          "state": "scu",
+          "list": [
+            {
+              "id": "b",
+              "name": "vacation",
+              "blobId": "cffl371evjql1zja0aiunlnutlt1qpfhorq9kxlhcd0sri02jccv1aqfaeapgai",
+              "isActive": false
+            },
+            {
+              "id": "c",
+              "name": "newsletters",
+              "blobId": "cgksniwutpd9zowz0elqtyj9bd2bmqaxhuw7h0vsqgrsudai1mao7aqfaiafo",
+              "isActive": true
+            }
+          ],
+          "notFound": []
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

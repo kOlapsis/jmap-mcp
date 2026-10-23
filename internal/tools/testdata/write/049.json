@@ -1,0 +1,35 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:sieve"
+    ],
+    "methodCalls": [
+      [
+        "SieveScript/validate",
+        {
+          "accountId": "c",
+          "blobId": "edknvyopkkglsxnau2kvit2bdndxgpgwcmnnqftxyistjbirpnwvuauv9lw0mbq"
+        },
+        "0"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "SieveScript/validate",
+        {
+          "accountId": "c",
+          "error": null
+        },
+        "0"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}

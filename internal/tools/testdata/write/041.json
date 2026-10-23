@@ -1,0 +1,77 @@
+{
+  "method": "POST",
+  "path": "/jmap/",
+  "status": 200,
+  "content_type": "application/json; charset=utf-8",
+  "request": {
+    "using": [
+      "urn:ietf:params:jmap:core",
+      "urn:ietf:params:jmap:mail",
+      "urn:ietf:params:jmap:vacationresponse"
+    ],
+    "methodCalls": [
+      [
+        "VacationResponse/set",
+        {
+          "accountId": "c",
+          "update": {
+            "singleton": {
+              "isEnabled": true,
+              "subject": "Away",
+              "textBody": "Back on Monday",
+              "toDate": "2026-12-01T00:00:00Z"
+            }
+          }
+        },
+        "0"
+      ],
+      [
+        "VacationResponse/get",
+        {
+          "accountId": "c",
+          "ids": [
+            "singleton"
+          ]
+        },
+        "1"
+      ]
+    ]
+  },
+  "response": {
+    "methodResponses": [
+      [
+        "VacationResponse/set",
+        {
+          "accountId": "c",
+          "oldState": "n",
+          "newState": "scq",
+          "updated": {
+            "singleton": null
+          }
+        },
+        "0"
+      ],
+      [
+        "VacationResponse/get",
+        {
+          "accountId": "c",
+          "state": "scq",
+          "list": [
+            {
+              "id": "singleton",
+              "isEnabled": true,
+              "fromDate": null,
+              "toDate": "2026-12-01T00:00:00Z",
+              "subject": "Away",
+              "textBody": "Back on Monday",
+              "htmlBody": null
+            }
+          ],
+          "notFound": []
+        },
+        "1"
+      ]
+    ],
+    "sessionState": "ce8baeda"
+  }
+}
