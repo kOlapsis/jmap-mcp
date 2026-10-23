@@ -1,5 +1,5 @@
 # Release image, built by GoReleaser from the prebuilt binaries (see Dockerfile.source to build from source).
-FROM --platform=$BUILDPLATFORM busybox:1.37 AS dirs
+FROM --platform=$BUILDPLATFORM busybox:1.38 AS dirs
 RUN mkdir -p /data && chown 65532:65532 /data && chmod 700 /data
 
 FROM gcr.io/distroless/static-debian12:nonroot
