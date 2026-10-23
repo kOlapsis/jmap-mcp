@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-23
+
+First release.
+
 ### Added
 
 - JMAP core: autodiscovery from an email address (DNS SRV `_jmap._tcp`, then
@@ -69,3 +73,6 @@ All notable changes to this project are documented here. The format follows
   `X-Forwarded-For` from private addresses.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.
+
+[Unreleased]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/kOlapsis/jmap-mcp/releases/tag/v0.1.0
