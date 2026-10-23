@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -210,11 +211,19 @@ func (s *Server) lookupClient(ctx context.Context, id string) (*store.Client, er
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 5<<10)).Decode(&doc); err != nil {
 		return nil, fmt.Errorf("client metadata document: %w", err)
 	}
-	if doc.ClientID != id || len(doc.RedirectURIs) == 0 || (doc.AuthMethod != "" && doc.AuthMethod != "none") {
+	if doc.ClientID != id || len(doc.RedirectURIs) == 0 || len(doc.RedirectURIs) > 10 || (doc.AuthMethod != "" && doc.AuthMethod != "none") {
 		return nil, errors.New("client metadata document: client_id mismatch, no redirect_uris or unsupported authentication")
+	}
+	for _, u := range doc.RedirectURIs {
+		if !validRedirectURI(u) {
+			return nil, errors.New("client metadata document: invalid redirect URI")
+		}
 	}
 	cl := &store.Client{ClientID: id, ClientName: truncate(doc.ClientName, 200), RedirectURIs: doc.RedirectURIs, AuthMethod: "none"}
 	s.mu.Lock()
+	if len(s.cimd) >= 1000 {
+		clear(s.cimd)
+	}
 	s.cimd[id] = cachedClient{client: cl, expires: time.Now().Add(10 * time.Minute)}
 	s.mu.Unlock()
 	return cl, nil
@@ -234,6 +243,7 @@ type pending struct {
 	SessionURL    string `json:"session_url,omitempty"`
 	Verifier      string `json:"verifier,omitempty"`
 	Nonce         string `json:"nonce,omitempty"`
+	Cookie        string `json:"cookie,omitempty"`
 }
 
 // redirectError sends an OAuth error back to the client's redirect URI.
@@ -256,7 +266,8 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	client, err := s.lookupClient(r.Context(), q.Get("client_id"))
 	if err != nil {
-		s.page(w, http.StatusBadRequest, "Unknown application", "This application is not registered with the bridge: "+err.Error(), nil)
+		s.log.Info("unknown client", "err", err)
+		s.page(w, http.StatusBadRequest, "Unknown application", "This application is not registered with the bridge.", nil)
 		return
 	}
 	redirect := q.Get("redirect_uri")
@@ -322,19 +333,18 @@ func (s *Server) authorizeSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.Email, p.Issuer, p.SessionURL, p.Verifier, p.Nonce = strings.ToLower(email), srv.Meta.Issuer, srv.SessionURL, oauth2.GenerateVerifier(), store.RandomToken("")
+	p.Cookie = store.RandomToken("")
 	if err := s.st.SaveAuthRequest(r.Context(), id, p, requestTTL); err != nil {
 		s.page(w, http.StatusInternalServerError, "Error", "Please retry.", nil)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: cookieValue(id), Path: "/", MaxAge: int(requestTTL.Seconds()), //nolint:gosec // Secure is off only for a plain-http development URL
+	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: p.Cookie, Path: "/", MaxAge: int(requestTTL.Seconds()), //nolint:gosec // Secure is off only for a plain-http development URL
 		HttpOnly: true, Secure: strings.HasPrefix(s.base(r), "https://"), SameSite: http.SameSiteLaxMode})
 	cfg := mailauth.Config(h.Meta, h.Registration, callback)
 	http.Redirect(w, r, cfg.AuthCodeURL(id, oauth2.S256ChallengeOption(p.Verifier), oauth2.SetAuthURLParam("login_hint", p.Email), oauth2.SetAuthURLParam("nonce", p.Nonce)), http.StatusFound) //nolint:gosec // the discovered mail authorization endpoint
 }
 
 const authCookie = "jmap_mcp_auth"
-
-func cookieValue(id string) string { return s256(id) }
 
 // s256 is the PKCE S256 transform (RFC 7636 §4.2).
 func s256(v string) string {
@@ -351,8 +361,11 @@ func domainOf(email string) string {
 func (s *Server) mailHost(ctx context.Context, meta *mailauth.Meta, callback string) (*store.Host, error) {
 	h, err := s.st.Host(ctx, meta.Issuer, hostKind)
 	if err == nil && (h.Registration.Static || slices.Contains(h.Registration.RedirectURIs, callback)) {
-		if !h.Registration.Static {
+		if !h.Registration.Static && !reflect.DeepEqual(h.Meta, meta) {
 			h.Meta = meta
+			if err := s.st.SaveHost(ctx, meta.Issuer, hostKind, h); err != nil {
+				return nil, err
+			}
 		}
 		return h, nil
 	}
@@ -369,15 +382,13 @@ func (s *Server) mailHost(ctx context.Context, meta *mailauth.Meta, callback str
 
 func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	id := q.Get("state")
-	c, err := r.Cookie(authCookie)
-	if err != nil || subtle.ConstantTimeCompare([]byte(c.Value), []byte(cookieValue(id))) != 1 {
-		s.page(w, http.StatusBadRequest, "Sign-in not started here", "This sign-in did not start in this browser. Start again from your assistant.", nil)
+	p := &pending{}
+	if err := s.st.AuthRequest(r.Context(), q.Get("state"), p, true); err != nil || p.Issuer == "" {
+		s.page(w, http.StatusBadRequest, "Expired", "This sign-in request has expired. Start again from your assistant.", nil)
 		return
 	}
-	p := &pending{}
-	if err := s.st.AuthRequest(r.Context(), id, p, true); err != nil || p.Issuer == "" {
-		s.page(w, http.StatusBadRequest, "Expired", "This sign-in request has expired. Start again from your assistant.", nil)
+	if c, err := r.Cookie(authCookie); err != nil || subtle.ConstantTimeCompare([]byte(c.Value), []byte(p.Cookie)) != 1 {
+		s.page(w, http.StatusBadRequest, "Sign-in not started here", "This sign-in did not start in this browser. Start again from your assistant.", nil)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
@@ -396,8 +407,9 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg := mailauth.Config(h.Meta, h.Registration, s.base(r)+"/callback")
 	tok, err := cfg.Exchange(s.env.Context(r.Context()), q.Get("code"), oauth2.VerifierOption(p.Verifier))
+	var sub string
 	if err == nil {
-		err = mailauth.CheckIDToken(h.Meta, tok, cfg.ClientID, p.Nonce)
+		sub, err = mailauth.IDTokenSubject(h.Meta, tok, cfg, p.Nonce)
 	}
 	if err != nil {
 		s.log.Warn("mail token exchange failed", "issuer", p.Issuer, "err", err)
@@ -414,7 +426,11 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		s.redirectError(w, r, p, "access_denied", "the mail account cannot be used")
 		return
 	}
-	subject, email := sess.Username, p.Email
+	// The user is the subject of the verified ID token; without OpenID, the session (same domain as the issuer) names it.
+	subject, email := sub, p.Email
+	if subject == "" {
+		subject = sess.Username
+	}
 	if subject == "" {
 		subject = p.Email
 	}
@@ -487,6 +503,10 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	var g *store.Grant
 	switch r.PostFormValue("grant_type") {
 	case "authorization_code":
+		if v := r.PostFormValue("code_verifier"); len(v) < 43 || len(v) > 128 {
+			oauthError(w, http.StatusBadRequest, "invalid_grant", "invalid code_verifier")
+			return
+		}
 		g, err = s.st.ConsumeCode(r.Context(), r.PostFormValue("code"))
 		if err != nil {
 			oauthError(w, http.StatusBadRequest, "invalid_grant", "invalid or expired code")
@@ -503,10 +523,9 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 			oauthError(w, http.StatusBadRequest, "invalid_grant", "PKCE verification failed")
 			return
 		}
-		g.Family = store.RandomToken("")
 	case "refresh_token":
-		g, err = s.st.RotateRefresh(r.Context(), r.PostFormValue("refresh_token"))
-		if err != nil || g.ClientID != client.ClientID {
+		g, err = s.st.RotateRefresh(r.Context(), r.PostFormValue("refresh_token"), client.ClientID)
+		if err != nil {
 			oauthError(w, http.StatusBadRequest, "invalid_grant", "invalid refresh token")
 			return
 		}
@@ -543,11 +562,12 @@ func (s *Server) revoke(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusBadRequest, "invalid_request", "invalid form")
 		return
 	}
-	if _, err := s.authenticateClient(r); err != nil {
+	client, err := s.authenticateClient(r)
+	if err != nil {
 		oauthError(w, http.StatusUnauthorized, "invalid_client", err.Error())
 		return
 	}
-	if err := s.st.RevokeToken(r.Context(), r.PostFormValue("token")); err != nil {
+	if err := s.st.RevokeToken(r.Context(), r.PostFormValue("token"), client.ClientID); err != nil {
 		oauthError(w, http.StatusInternalServerError, "server_error", "")
 		return
 	}

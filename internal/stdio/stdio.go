@@ -20,6 +20,7 @@ import (
 
 	"github.com/kOlapsis/jmap-mcp/internal/config"
 	"github.com/kOlapsis/jmap-mcp/internal/jmapc"
+	"github.com/kOlapsis/jmap-mcp/internal/mailauth"
 	"github.com/kOlapsis/jmap-mcp/internal/mailview"
 	"github.com/kOlapsis/jmap-mcp/internal/tools"
 )
@@ -32,7 +33,7 @@ func Run(ctx context.Context, cfg *config.Config, version string, log *slog.Logg
 	var connector tools.Connector
 	if cfg.DevToken != "" {
 		hc := cfg.Net.Client(60 * time.Second)
-		hc.Transport = &oauth2.Transport{Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.DevToken}), Base: hc.Transport}
+		hc.Transport = &mailauth.BearerTransport{Source: oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cfg.DevToken}), Base: hc.Transport}
 		b.accounts = []*tools.Account{{Email: "dev", Client: &jmapc.Client{HTTP: hc, SessionURL: cfg.DevSessionURL}}}
 	} else {
 		mgr, err := newManager(cfg, log)
@@ -133,6 +134,13 @@ func safeName(name string) string {
 	}, name)
 	if name == "" || name == "." || name == ".." {
 		return "attachment"
+	}
+	if len(name) > 120 {
+		ext := filepath.Ext(name)
+		if len(ext) > 20 {
+			ext = ""
+		}
+		name = strings.ToValidUTF8(name[:120-len(ext)], "") + ext
 	}
 	return name
 }

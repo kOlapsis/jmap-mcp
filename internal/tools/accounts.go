@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/mikluko/jmap"
@@ -65,9 +67,10 @@ type connectInput struct {
 }
 
 func (s *Server) connectAccount(ctx context.Context, req *mcp.CallToolRequest, in connectInput) (*mcp.CallToolResult, error) {
+	d := newDialog(req)
 	addr := in.Email
 	if addr == "" {
-		r, res, err := newDialog(req).ask(ctx, "email", &mcp.ElicitParams{
+		r, res, err := d.ask(ctx, "email", &mcp.ElicitParams{
 			Message: "Email address of the mail account to connect (you will sign in on your mail server's page, not here)",
 			RequestedSchema: &jsonschema.Schema{
 				Type:       "object",
@@ -86,8 +89,20 @@ func (s *Server) connectAccount(ctx context.Context, req *mcp.CallToolRequest, i
 		}
 		addr, _ = r.Content["email"].(string)
 	}
-	if _, err := jmapc.Domain(addr); err != nil {
+	domain, err := jmapc.Domain(addr)
+	if err != nil {
 		return nil, err
+	}
+	if in.Email != "" {
+		// The address came from the model, possibly from an email: let the user check it before a browser opens.
+		msg := fmt.Sprintf("Connect the mail account %s? Your browser will open on the sign-in page of the mail server of %s.", addr, domain)
+		res, err := d.confirm(ctx, "confirm_connect:"+strings.ToLower(addr), msg)
+		if err != nil && !errors.Is(err, errNoElicitation) {
+			return nil, err
+		}
+		if res != nil {
+			return res, nil
+		}
 	}
 	msg, err := s.opts.Connector.Connect(ctx, addr, in.DeviceFlow)
 	if err != nil {

@@ -59,5 +59,13 @@ All notable changes to this project are documented here. The format follows
   registry, CI and release workflows, an image workflow pushing
   `ghcr.io/kolapsis/jmap-mcp:main` on every change of the main branch,
   Dependabot.
+- Security hardening after review: the JMAP host and its authorization server
+  must share a registrable domain; the user identity comes from the verified
+  ID token; mail tokens are not sent after cross-host redirects; confirmations
+  are bound to the exact content and show the full message and attachment
+  names; out-of-office changes and model-supplied account connections are
+  confirmed; refresh tokens and revocation are bound to their client; a replayed
+  authorization code revokes its tokens; the rate-limit key only trusts
+  `X-Forwarded-For` from private addresses.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.

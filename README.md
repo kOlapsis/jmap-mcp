@@ -52,7 +52,7 @@ converted to text and truncated with an explicit flag.
 | `delete_emails` | Trash by default; `permanent` destroys after the user's confirmation. |
 | `create_draft` | New message or reply: In-Reply-To, References, `Re:` subject, quote, reply-all recipients, attachments uploaded over JMAP. |
 | `send_email` | Sends a draft, or composes and sends. Disabled unless `--enable-send`; every message is confirmed by the user. |
-| `vacation_response` | Read or change the out-of-office reply. Registered when the server announces it. |
+| `vacation_response` | Read or change the out-of-office reply (changes are confirmed). Registered when the server announces it. |
 | `sieve_scripts` | List, read, write, activate, deactivate, delete filtering rules ([RFC 9661](https://www.rfc-editor.org/rfc/rfc9661)); changes are confirmed. Registered when announced. |
 
 The resource `jmap-mcp://status` describes the connected accounts, the discovered servers and the
@@ -217,7 +217,8 @@ _jmap._tcp.example.com. 3600 IN SRV 0 1 443 mail.example.com.
 ```
 
 The OAuth server is found from the JMAP host: RFC 9728 resource metadata, then RFC 8414 and OpenID
-Connect discovery.
+Connect discovery. It must be under the same registrable domain as the JMAP host (for example
+`jmap.example.com` and `auth.example.com`); otherwise the bridge refuses the server.
 
 **Client registration with Stalwart.** Nothing to do with the default settings: the bridge
 registers itself as a public client with PKCE, which Stalwart accepts anonymously
@@ -277,24 +278,34 @@ Everything below must be reachable through the reverse proxy, on the same host n
 
 - Only tokens issued by the bridge are accepted, and only for its own resource URL; mail-server
   tokens never leave the bridge. Issued tokens are opaque random values stored as keyed hashes.
-  Access tokens last one hour; refresh tokens rotate on every use, and reusing an old one revokes
-  the whole chain.
+  Access tokens last one hour; refresh tokens rotate on every use and only work for their client,
+  and reusing an old one revokes the whole chain. Replaying an authorization code revokes the tokens
+  issued from it.
 - PKCE S256 is mandatory. Redirect URIs must be HTTPS, loopback HTTP or a private-use scheme, and
   match the registration exactly (any port for loopback). `state` is echoed and the `iss` parameter
   (RFC 9207) is sent and checked. On the mail-server leg, `state`, `iss` and the `nonce` of the ID
   token are checked, and the flow is bound to the browser with a cookie.
+- A JMAP host can only send users to an authorization server of its own registrable domain, so a
+  hostile domain cannot collect tokens issued by another mail server. The user is identified by the
+  issuer and the `sub` of the ID token (nonce, issuer and audience checked), not by what the JMAP
+  server reports. Mail tokens are only sent to the host they were requested for, never after a
+  redirect to another host.
 - Every outbound request (discovery, OAuth, JMAP, client metadata documents) goes through a guard
   that accepts only HTTPS, resolves the name and refuses private, loopback and link-local addresses
   at connection time, and limits redirects.
 - Secrets are generated on first start: a master key in the data directory (or the OS keyring in
   local mode), from which the database encryption key (AES-GCM), the token hashing key and the
   attachment URL key are derived. Mail-server tokens and client secrets are encrypted at rest.
-- The OAuth endpoints are rate limited per client IP. HTML pages use no JavaScript and send a strict
+- The OAuth endpoints are rate limited per client IP; `X-Forwarded-For` is only trusted when the
+  request comes from a private address, that is from your reverse proxy. HTML pages use no JavaScript and send a strict
   Content Security Policy, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`. Attachments
   are always served as downloads (`application/octet-stream`, sandbox CSP).
-- Sending email is off by default; when on, every message, permanent deletion and Sieve change is
-  confirmed by the user. With clients that cannot elicit, the model must pass `confirm=true` after
-  asking the user, so keep tool approval enabled in such clients.
+- Sending email is off by default; when on, every message (full body and attachment names),
+  permanent deletion, Sieve change and out-of-office change is confirmed by the user, and an
+  approval only covers the exact content it showed. In local mode, connecting an account whose
+  address came from the model is confirmed too. With clients that cannot elicit, the model must pass
+  `confirm=true` after asking the user, as the specification requires; keep tool approval enabled in
+  such clients, since a prompt-injected model could set it.
 
 Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
@@ -369,8 +380,14 @@ made, checked against the actual software in October 2026:
    the OS keyring holds the master key rather than each token.
 8. **Issued tokens.** Opaque tokens stored as keyed hashes rather than signed JWTs: they can be
    revoked, and refresh token reuse can be detected.
-9. **Sieve.** Writing or activating a filtering rule can redirect or drop mail, so it requires the
-   same confirmation as sending.
+9. **Sieve and out-of-office.** Writing or activating a filtering rule can redirect or drop mail, and
+   an automatic reply sends text to everyone who writes: both require the same confirmation as
+   sending.
+10. **Same-domain authorization server.** Following a JMAP host's metadata to any authorization
+    server would let a hostile domain receive tokens issued by another server (and, in HTTP mode,
+    claim another user's identity). The JMAP host and the issuer must share their registrable
+    domain, and the user identity comes from the ID token. A provider whose JMAP host and OAuth
+    server sit on unrelated domains is therefore not supported.
 
 ## Releasing
 

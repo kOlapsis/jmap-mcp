@@ -2,7 +2,9 @@ package tools
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"mime"
@@ -10,6 +12,7 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mikluko/jmap"
 	jmail "github.com/mikluko/jmap/mail"
@@ -163,8 +166,10 @@ type deleteInput struct {
 }
 
 // confirmOrArg asks the user through elicitation, or requires the explicit confirm argument when the client cannot ask.
+// The answer is keyed by a hash of msg, so an approval only covers the exact action it showed.
 func confirmOrArg(ctx context.Context, d *dialog, key, msg string, confirmed bool, what string) (*mcp.CallToolResult, error) {
-	res, err := d.confirm(ctx, key, msg)
+	sum := sha256.Sum256([]byte(msg))
+	res, err := d.confirm(ctx, key+":"+hex.EncodeToString(sum[:8]), msg)
 	if errors.Is(err, errNoElicitation) {
 		if confirmed {
 			return nil, nil
@@ -385,6 +390,27 @@ type composed struct {
 	body      string
 	nAttached int
 	pending   []attachmentInput
+}
+
+const confirmBodyMax = 10000
+
+// attachmentList names the attachments and their sizes for a confirmation.
+func (c *composed) attachmentList() string {
+	var parts []string
+	for _, p := range c.email.Attachments {
+		parts = append(parts, fmt.Sprintf("%s (%d bytes)", p.Name, p.Size))
+	}
+	for _, a := range c.pending {
+		size := len(a.Text)
+		if a.Base64 != "" {
+			size = base64.StdEncoding.DecodedLen(len(a.Base64))
+		}
+		parts = append(parts, fmt.Sprintf("%s (%d bytes)", a.Name, size))
+	}
+	if len(parts) == 0 {
+		return "none"
+	}
+	return strings.Join(parts, ", ")
 }
 
 // attach uploads the pending attachments; it runs only once the user has approved the message.
@@ -616,10 +642,13 @@ func (s *Server) sendEmail(ctx context.Context, req *mcp.CallToolRequest, in sen
 	if c.identity.ID == "" {
 		return nil, errors.New("no sender identity matches the From address of this message")
 	}
-	preview, _ := mailview.Truncate(c.body, 600)
-	msg := fmt.Sprintf("Send this email from %s?\nTo: %s\nCc: %s\nBcc: %s\nSubject: %s\nAttachments: %d\n\n%s",
+	body, cut := mailview.Truncate(c.body, confirmBodyMax)
+	if cut {
+		body += fmt.Sprintf("\n[… %d more characters]", utf8.RuneCountInString(c.body)-confirmBodyMax)
+	}
+	msg := fmt.Sprintf("Send this email from %s?\nTo: %s\nCc: %s\nBcc: %s\nSubject: %s\nAttachments: %s\n\n%s",
 		mailview.Address(c.email.From[0]), strings.Join(mailview.Addresses(c.email.To), ", "), strings.Join(mailview.Addresses(c.email.CC), ", "),
-		strings.Join(mailview.Addresses(c.email.BCC), ", "), c.email.Subject, c.nAttached, preview)
+		strings.Join(mailview.Addresses(c.email.BCC), ", "), c.email.Subject, c.attachmentList(), body)
 	if res, err := confirmOrArg(ctx, d, "confirm_send", msg, in.Confirm, "Sending"); err != nil || res != nil {
 		return res, err
 	}
@@ -674,6 +703,9 @@ func (s *Server) loadDraft(ctx context.Context, d *dialog, m *mailContext, id, w
 		return nil, nil, err
 	}
 	e := es[0]
+	if !slices.Contains(mailview.Flags(e.Keywords), "draft") {
+		return nil, nil, errors.New("this email is not a draft; use create_draft, or compose the message in send_email")
+	}
 	if len(e.From) == 0 {
 		return nil, nil, errors.New("the draft has no From address")
 	}

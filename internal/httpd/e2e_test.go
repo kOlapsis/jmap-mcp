@@ -275,11 +275,24 @@ func TestAuthorizationServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status, tok := c.token(url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {clientRedirect}, "code_verifier": {"wrong"}}); status != http.StatusBadRequest || tok["error"] != "invalid_grant" {
+	if status, tok := c.token(url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {clientRedirect}, "code_verifier": {strings.Repeat("w", 43)}}); status != http.StatusBadRequest || tok["error"] != "invalid_grant" {
 		t.Fatalf("bad verifier: %d %v", status, tok)
 	}
 	if status, _ := c.token(url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {clientRedirect}, "code_verifier": {c.verifier}}); status != http.StatusBadRequest {
 		t.Fatal("a code must work only once")
+	}
+
+	q, err = b.authorize(c.authURL(nil), "alice@example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	form := url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {clientRedirect}, "code_verifier": {c.verifier}}
+	_, first := c.token(form)
+	if status, _ := c.token(form); status != http.StatusBadRequest {
+		t.Fatal("a replayed code must be refused")
+	}
+	if status, _ := mcpStatus(t, b, first["access_token"].(string), nil); status != http.StatusUnauthorized {
+		t.Fatal("tokens issued from a replayed code must be revoked")
 	}
 
 	tok := c.login(t)
@@ -302,6 +315,11 @@ func TestAuthorizationServer(t *testing.T) {
 	status, rotated := c.token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {tok["refresh_token"].(string)}})
 	if status != http.StatusOK || rotated["refresh_token"] == tok["refresh_token"] {
 		t.Fatalf("refresh: %d %v", status, rotated)
+	}
+	_, other := register(t, b, `{"redirect_uris":["`+clientRedirect+`"],"token_endpoint_auth_method":"none"}`)
+	thief := &oauthClient{b: b, id: other["client_id"].(string)}
+	if status, _ := thief.token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {rotated["refresh_token"].(string)}}); status != http.StatusBadRequest {
+		t.Fatal("a refresh token must only work for its client")
 	}
 	if status, _ := c.token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {tok["refresh_token"].(string)}}); status != http.StatusBadRequest {
 		t.Fatal("a rotated refresh token must not work again")
@@ -439,5 +457,23 @@ func TestStaticClientFallback(t *testing.T) {
 	}
 	if tok := c.login(t); tok["access_token"] == nil {
 		t.Fatal("no token with the static client")
+	}
+}
+
+func TestRateLimitKey(t *testing.T) {
+	for _, c := range []struct{ remote, xff, want string }{
+		{"203.0.113.9:1234", "", "203.0.113.9"},
+		{"8.8.8.8:1234", "1.2.3.4", "8.8.8.8"},
+		{"172.18.0.2:1234", "1.2.3.4, 9.9.9.9", "9.9.9.9"},
+		{"127.0.0.1:1234", "", "127.0.0.1"},
+	} {
+		r := httptest.NewRequest(http.MethodGet, "/", nil)
+		r.RemoteAddr = c.remote
+		if c.xff != "" {
+			r.Header.Set("X-Forwarded-For", c.xff)
+		}
+		if got, _ := clientIP(r); got != c.want {
+			t.Errorf("clientIP(%s, %q) = %s, want %s", c.remote, c.xff, got, c.want)
+		}
 	}
 }

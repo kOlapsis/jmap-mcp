@@ -90,3 +90,38 @@ func TestUntrustedContentWarning(t *testing.T) {
 		t.Fatalf("no account: %s", txt)
 	}
 }
+
+type fakeConnector struct{ connected []string }
+
+func (f *fakeConnector) Connect(_ context.Context, email string, _ bool) (string, error) {
+	f.connected = append(f.connected, email)
+	return "connected " + email, nil
+}
+
+func TestConnectAccountConfirmsModelSuppliedAddress(t *testing.T) {
+	conn := &fakeConnector{}
+	srv := New(Options{Backend: &staticBackend{}, Connector: conn})
+	answer := "decline"
+	cs := connect(t, srv, func(_ context.Context, req *mcp.ElicitRequest) (*mcp.ElicitResult, error) {
+		if !strings.Contains(req.Params.Message, "attacker@evil.example") {
+			t.Errorf("confirmation does not name the account: %s", req.Params.Message)
+		}
+		return &mcp.ElicitResult{Action: answer, Content: map[string]any{"confirm": answer == "accept"}}, nil
+	})
+	if txt, isErr := call(t, cs, "connect_account", map[string]any{"email": "attacker@evil.example"}); !isErr || len(conn.connected) != 0 {
+		t.Fatalf("connected without confirmation: %s", txt)
+	}
+	answer = "accept"
+	if txt, isErr := call(t, cs, "connect_account", map[string]any{"email": "attacker@evil.example"}); isErr || len(conn.connected) != 1 {
+		t.Fatalf("confirmed connection failed: %s", txt)
+	}
+}
+
+func TestVacationChangeNeedsConfirmation(t *testing.T) {
+	url := testenv.Replay(t, "testdata/read")
+	acct := &Account{Email: "alice@example.test", Client: &jmapc.Client{HTTP: http.DefaultClient, SessionURL: url}}
+	cs := connect(t, New(Options{Backend: &staticBackend{accounts: []*Account{acct}}}), nil)
+	if txt, isErr := call(t, cs, "vacation_response", map[string]any{"enabled": true, "text_body": "secret data"}); !isErr || !strings.Contains(txt, "confirm=true") {
+		t.Fatalf("vacation change without confirmation: %s", txt)
+	}
+}

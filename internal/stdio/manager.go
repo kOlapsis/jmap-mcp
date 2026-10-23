@@ -209,7 +209,7 @@ func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.S
 				var tok *oauth2.Token
 				tok, res.err = cfg.Exchange(m.env.Context(wait), res.code, oauth2.VerifierOption(verifier))
 				if res.err == nil {
-					res.err = mailauth.CheckIDToken(h.Meta, tok, cfg.ClientID, nonce)
+					_, res.err = mailauth.IDTokenSubject(h.Meta, tok, cfg, nonce)
 				}
 				if res.err == nil {
 					res.err = m.finish(wait, email, srv, h, tok)

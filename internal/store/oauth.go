@@ -102,20 +102,41 @@ func (s *Store) SaveCode(ctx context.Context, code string, g *Grant, ttl time.Du
 	return err
 }
 
-// ConsumeCode returns and deletes an authorization code; a code works once.
+// ConsumeCode redeems an authorization code once. The code is kept until it expires: presenting it
+// again revokes the tokens issued from it (RFC 9700 §4.5) and returns ErrTokenReuse.
 func (s *Store) ConsumeCode(ctx context.Context, code string) (*Grant, error) {
 	h := s.Hash(code)
-	var data string
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	var data, family string
 	var exp int64
-	err := s.db.QueryRowContext(ctx, "DELETE FROM auth_codes WHERE code_hash = ? RETURNING data, expires_at", h).Scan(&data, &exp)
+	err = tx.QueryRowContext(ctx, "SELECT data, expires_at, family FROM auth_codes WHERE code_hash = ?", h).Scan(&data, &exp, &family)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && exp < now()) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
-	g := &Grant{}
-	return g, json.Unmarshal([]byte(data), g)
+	if family != "" {
+		if _, err := tx.ExecContext(ctx, "DELETE FROM tokens WHERE family = ?", family); err != nil {
+			return nil, err
+		}
+		if err := tx.Commit(); err != nil {
+			return nil, err
+		}
+		return nil, ErrTokenReuse
+	}
+	g := &Grant{Family: RandomToken("")}
+	if err := json.Unmarshal([]byte(data), g); err != nil {
+		return nil, err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE auth_codes SET family = ? WHERE code_hash = ?", g.Family, h); err != nil {
+		return nil, err
+	}
+	return g, tx.Commit()
 }
 
 // Token kinds.
@@ -146,9 +167,9 @@ func (s *Store) Token(ctx context.Context, token, kind string) (*Grant, error) {
 // ErrTokenReuse means a rotated refresh token was presented again; its whole family is revoked.
 var ErrTokenReuse = errors.New("refresh token reuse")
 
-// RotateRefresh marks a refresh token as used and returns its grant.
+// RotateRefresh marks a refresh token of clientID as used and returns its grant.
 // Presenting an already rotated token revokes every token of its family (RFC 9700 §4.14.2).
-func (s *Store) RotateRefresh(ctx context.Context, token string) (*Grant, error) {
+func (s *Store) RotateRefresh(ctx context.Context, token, clientID string) (*Grant, error) {
 	h := s.Hash(token)
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -165,6 +186,9 @@ func (s *Store) RotateRefresh(ctx context.Context, token string) (*Grant, error)
 	if err != nil {
 		return nil, err
 	}
+	if g.ClientID != clientID {
+		return nil, ErrNotFound
+	}
 	if kind == usedRefresh {
 		if _, err := tx.ExecContext(ctx, "DELETE FROM tokens WHERE family = ?", g.Family); err != nil {
 			return nil, err
@@ -180,10 +204,10 @@ func (s *Store) RotateRefresh(ctx context.Context, token string) (*Grant, error)
 	return g, tx.Commit()
 }
 
-// RevokeToken deletes a token; revoking a refresh token revokes its whole family.
-func (s *Store) RevokeToken(ctx context.Context, token string) error {
+// RevokeToken deletes a token of clientID; revoking a refresh token revokes its whole family.
+func (s *Store) RevokeToken(ctx context.Context, token, clientID string) error {
 	var family, kind string
-	err := s.db.QueryRowContext(ctx, "SELECT family, kind FROM tokens WHERE token_hash = ?", s.Hash(token)).Scan(&family, &kind)
+	err := s.db.QueryRowContext(ctx, "SELECT family, kind FROM tokens WHERE token_hash = ? AND client_id = ?", s.Hash(token), clientID).Scan(&family, &kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}

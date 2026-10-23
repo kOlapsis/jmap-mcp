@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/kOlapsis/jmap-mcp/internal/config"
 	"github.com/kOlapsis/jmap-mcp/internal/jmapc"
 	"github.com/kOlapsis/jmap-mcp/internal/mailauth"
+	"github.com/kOlapsis/jmap-mcp/internal/netguard"
 	"github.com/kOlapsis/jmap-mcp/internal/store"
 	"github.com/kOlapsis/jmap-mcp/internal/tools"
 )
@@ -174,17 +176,22 @@ func validHost(h string) bool {
 	return true
 }
 
-// clientIP keys rate limits on the address the reverse proxy saw, else the peer address.
+// clientIP keys rate limits on the peer address, or on the address a reverse proxy on a
+// private network reports: a client reaching the bridge directly cannot pick its own key.
 func clientIP(r *http.Request) (string, error) {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		if ip := net.ParseIP(strings.TrimSpace(parts[len(parts)-1])); ip != nil {
-			return ip.String(), nil
-		}
-	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return r.RemoteAddr, nil
+		host = r.RemoteAddr
+	}
+	peer, err := netip.ParseAddr(host)
+	if err != nil || netguard.PublicAddr(peer) {
+		return host, nil
+	}
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		if ip, err := netip.ParseAddr(strings.TrimSpace(parts[len(parts)-1])); err == nil {
+			return ip.String(), nil
+		}
 	}
 	return host, nil
 }

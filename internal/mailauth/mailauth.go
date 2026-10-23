@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
+	"golang.org/x/net/publicsuffix"
 	"golang.org/x/oauth2"
 
 	"github.com/kOlapsis/jmap-mcp/internal/jmapc"
@@ -74,7 +75,25 @@ func (e *Env) Discover(ctx context.Context, email string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	su, _ := url.Parse(sessionURL)
+	iu, err := url.Parse(meta.Issuer)
+	if err != nil || !SameSite(su.Hostname(), iu.Hostname()) {
+		return nil, fmt.Errorf("the JMAP server %s and the authorization server %s it names are not under the same domain", su.Hostname(), meta.Issuer)
+	}
 	return &Server{SessionURL: sessionURL, Meta: meta}, nil
+}
+
+// SameSite reports whether two host names share their registrable domain (eTLD+1).
+// A JMAP host may only send its users to an authorization server of the same domain,
+// otherwise it could collect the tokens another server issues.
+func SameSite(a, b string) bool {
+	a, b = strings.ToLower(strings.TrimSuffix(a, ".")), strings.ToLower(strings.TrimSuffix(b, "."))
+	if a == b {
+		return true
+	}
+	da, err1 := publicsuffix.EffectiveTLDPlusOne(a)
+	db, err2 := publicsuffix.EffectiveTLDPlusOne(b)
+	return err1 == nil && err2 == nil && da == db
 }
 
 // DiscoverAuthServer finds the authorization server protecting a session URL:
@@ -237,10 +256,10 @@ func (e *Env) Register(ctx context.Context, m *Meta, name string, redirectURIs [
 	return nil, fmt.Errorf("dynamic client registration refused: %w", errors.Join(errs...))
 }
 
-// Scopes returns the scopes to request: the JMAP mail scope and offline_access when advertised.
+// Scopes returns the scopes to request: openid, the JMAP mail scope and offline_access when advertised.
 func Scopes(m *Meta) []string {
 	var s []string
-	for _, want := range []string{MailScope, "offline_access"} {
+	for _, want := range []string{"openid", MailScope, "offline_access"} {
 		if slices.Contains(m.ScopesSupported, want) {
 			s = append(s, want)
 		}
@@ -282,28 +301,33 @@ func CheckIssuer(m *Meta, iss string) error {
 	return nil
 }
 
-// CheckIDToken verifies the nonce, issuer and audience of the ID token returned with tok, if any.
-// The token comes straight from the token endpoint over TLS, which authenticates it (OpenID Connect Core §3.1.3.7).
-func CheckIDToken(m *Meta, tok *oauth2.Token, clientID, nonce string) error {
+// IDTokenSubject verifies the ID token returned with tok (nonce, issuer, audience) and returns its subject.
+// An ID token is required when openid was requested. The token comes straight from the token endpoint
+// over TLS, which authenticates it (OpenID Connect Core §3.1.3.7).
+func IDTokenSubject(m *Meta, tok *oauth2.Token, cfg *oauth2.Config, nonce string) (string, error) {
 	raw, _ := tok.Extra("id_token").(string)
 	if raw == "" {
-		return nil
+		if slices.Contains(cfg.Scopes, "openid") {
+			return "", errors.New("the authorization server returned no id_token")
+		}
+		return "", nil
 	}
 	parts := strings.Split(raw, ".")
 	if len(parts) != 3 {
-		return errors.New("malformed id_token")
+		return "", errors.New("malformed id_token")
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	if err != nil {
-		return fmt.Errorf("malformed id_token: %w", err)
+		return "", fmt.Errorf("malformed id_token: %w", err)
 	}
 	var claims struct {
 		Issuer   string          `json:"iss"`
+		Subject  string          `json:"sub"`
 		Audience json.RawMessage `json:"aud"`
 		Nonce    string          `json:"nonce"`
 	}
 	if err := json.Unmarshal(payload, &claims); err != nil {
-		return fmt.Errorf("malformed id_token: %w", err)
+		return "", fmt.Errorf("malformed id_token: %w", err)
 	}
 	var aud []string
 	if json.Unmarshal(claims.Audience, &aud) != nil {
@@ -313,22 +337,52 @@ func CheckIDToken(m *Meta, tok *oauth2.Token, clientID, nonce string) error {
 	}
 	switch {
 	case claims.Nonce != nonce:
-		return errors.New("id_token nonce mismatch")
+		return "", errors.New("id_token nonce mismatch")
 	case strings.TrimSuffix(claims.Issuer, "/") != strings.TrimSuffix(m.Issuer, "/"):
-		return fmt.Errorf("id_token issuer %q does not match %q", claims.Issuer, m.Issuer)
-	case !slices.Contains(aud, clientID):
-		return errors.New("id_token audience mismatch")
+		return "", fmt.Errorf("id_token issuer %q does not match %q", claims.Issuer, m.Issuer)
+	case !slices.Contains(aud, cfg.ClientID):
+		return "", errors.New("id_token audience mismatch")
+	case claims.Subject == "":
+		return "", errors.New("id_token without subject")
 	}
-	return nil
+	return claims.Subject, nil
 }
 
 // Client returns a JMAP client whose token refreshes transparently; save is called with every new token.
 func (e *Env) Client(cfg *oauth2.Config, tok *oauth2.Token, sessionURL string, save func(*oauth2.Token)) *jmapc.Client {
 	src := &savingSource{src: cfg.TokenSource(e.Context(context.Background()), tok), last: tok.AccessToken, save: save}
 	return &jmapc.Client{
-		HTTP:       &http.Client{Timeout: e.HTTP.Timeout, CheckRedirect: e.HTTP.CheckRedirect, Transport: &oauth2.Transport{Source: src, Base: e.HTTP.Transport}},
+		HTTP:       &http.Client{Timeout: e.HTTP.Timeout, CheckRedirect: e.HTTP.CheckRedirect, Transport: &BearerTransport{Source: src, Base: e.HTTP.Transport}},
 		SessionURL: sessionURL,
 	}
+}
+
+// BearerTransport adds the token to requests, except after a redirect to another host,
+// unlike oauth2.Transport which would hand the token to whatever host a server redirects to.
+type BearerTransport struct {
+	Source oauth2.TokenSource
+	Base   http.RoundTripper
+}
+
+// RoundTrip implements http.RoundTripper.
+func (t *BearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	first := req
+	for first.Response != nil && first.Response.Request != nil {
+		first = first.Response.Request
+	}
+	if !strings.EqualFold(first.URL.Host, req.URL.Host) {
+		return t.Base.RoundTrip(req)
+	}
+	tok, err := t.Source.Token()
+	if err != nil {
+		if req.Body != nil {
+			req.Body.Close()
+		}
+		return nil, err
+	}
+	r := req.Clone(req.Context())
+	tok.SetAuthHeader(r)
+	return t.Base.RoundTrip(r)
 }
 
 type savingSource struct {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/mikluko/jmap"
@@ -19,7 +20,7 @@ func (s *Server) registerVacation() {
 	mcp.AddTool(s.Server, &mcp.Tool{
 		Name: "vacation_response",
 		Description: "Read the automatic out-of-office reply, or change it when any of enabled, subject, text_body, from_date or to_date is given. " +
-			"Only change it at the user's request.",
+			"Changes are confirmed by the user, since the reply is sent to everyone who writes.",
 		Annotations: &mcp.ToolAnnotations{Title: "Out-of-office reply", IdempotentHint: true, DestructiveHint: ptr(false)},
 	}, handler(s.vacation))
 }
@@ -31,10 +32,12 @@ type vacationInput struct {
 	TextBody *string `json:"text_body,omitempty" jsonschema:"plain-text body of the reply"`
 	FromDate *string `json:"from_date,omitempty" jsonschema:"start (YYYY-MM-DD or RFC 3339); empty string to clear"`
 	ToDate   *string `json:"to_date,omitempty" jsonschema:"end (YYYY-MM-DD or RFC 3339); empty string to clear"`
+	Confirm  bool    `json:"confirm,omitempty" jsonschema:"only when the client cannot ask the user itself: set it after the user explicitly approved the change"`
 }
 
 func (s *Server) vacation(ctx context.Context, req *mcp.CallToolRequest, in vacationInput) (*mcp.CallToolResult, error) {
-	m, res, err := s.mail(ctx, newDialog(req), in.Account)
+	d := newDialog(req)
+	m, res, err := s.mail(ctx, d, in.Account)
 	if err != nil || res != nil {
 		return res, err
 	}
@@ -64,6 +67,21 @@ func (s *Server) vacation(ctx context.Context, req *mcp.CallToolRequest, in vaca
 			return nil, err
 		}
 		patch[name] = t.UTC().Format("2006-01-02T15:04:05Z")
+	}
+	if len(patch) > 0 {
+		keys := make([]string, 0, len(patch))
+		for k := range patch {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		var lines []string
+		for _, k := range keys {
+			lines = append(lines, fmt.Sprintf("%s: %v", k, patch[k]))
+		}
+		msg := fmt.Sprintf("Change the automatic reply of %s? It is sent to everyone who writes to you.\n%s", m.acct.Email, strings.Join(lines, "\n"))
+		if res, err := confirmOrArg(ctx, d, "confirm_vacation", msg, in.Confirm, "Changing the automatic reply"); err != nil || res != nil {
+			return res, err
+		}
 	}
 	r := &jmap.Request{}
 	sid := ""
