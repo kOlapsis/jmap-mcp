@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/kOlapsis/jmap-mcp/internal/config"
+	"github.com/kOlapsis/jmap-mcp/internal/httpd"
 	"github.com/kOlapsis/jmap-mcp/internal/stdio"
 )
 
@@ -43,6 +44,21 @@ func run() error {
 	switch cfg.Command {
 	case "":
 		return stdio.Run(ctx, cfg, version, log)
+	case "serve":
+		srv, err := httpd.New(cfg, version, log)
+		if err != nil {
+			return err
+		}
+		defer srv.Close()
+		return srv.Run(ctx)
+	case "admin-token":
+		srv, err := httpd.New(cfg, version, slog.New(slog.DiscardHandler))
+		if err != nil {
+			return err
+		}
+		defer srv.Close()
+		fmt.Println(srv.AdminToken())
+		return nil
 	case "version":
 		fmt.Println(version)
 		return nil

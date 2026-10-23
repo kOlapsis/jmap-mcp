@@ -38,6 +38,18 @@ All notable changes to this project are documented here. The format follows
   `sieve_scripts` (RFC 9661, changes confirmed by the user).
 - Elicitation works with clients on the 2026-07-28 protocol (multi round-trip
   requests) and with older clients (direct `elicitation/create`).
+- HTTP mode (`jmap-mcp serve`) for remote clients such as Claude.ai and
+  Claude Code: OAuth 2.1 resource server (RFC 9728 metadata, audience check on
+  every request), minimal authorization server (RFC 8414 metadata, PKCE S256,
+  RFC 8707 resource indicators, dynamic registration, Client ID Metadata
+  Documents, refresh token rotation with reuse detection, revocation) and
+  OAuth client of the mail server. Mail tokens never reach the MCP client.
+- Consent page asking only for the email address; sign-in happens on the mail
+  server. Fallback `/admin` page to enter a statically declared client when the
+  mail server refuses dynamic registration.
+- Short-lived signed attachment URLs, public URL derived from `X-Forwarded-*`,
+  security headers, rate limiting on the OAuth endpoints, one MCP server per
+  user.
 - Encrypted SQLite store (AES-GCM, master key generated on first start and
   kept in the OS keyring when available, otherwise in a 0600 file).
 - Integration tests against Stalwart in Docker, and unit tests replaying the
