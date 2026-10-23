@@ -2,8 +2,8 @@ package httpd
 
 import (
 	"crypto/subtle"
-	"errors"
 	"encoding/base64"
+	"errors"
 	"html/template"
 	"net/http"
 	"net/url"

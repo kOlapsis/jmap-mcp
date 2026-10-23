@@ -154,7 +154,7 @@ func (s *Store) RotateRefresh(ctx context.Context, token string) (*Grant, error)
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	g := &Grant{}
 	var kind string
 	err = tx.QueryRowContext(ctx, "SELECT kind, user_id, client_id, resource, scope, family, expires_at FROM tokens WHERE token_hash = ? AND kind IN (?, ?) AND expires_at >= ?",

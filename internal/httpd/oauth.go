@@ -73,10 +73,10 @@ func validRedirectURI(raw string) bool {
 	if err != nil || u.Fragment != "" || strings.Contains(raw, "#") {
 		return false
 	}
-	switch {
-	case u.Scheme == "https":
+	switch u.Scheme {
+	case "https":
 		return u.Host != ""
-	case u.Scheme == "http":
+	case "http":
 		return isLoopback(u.Hostname())
 	default:
 		return strings.Contains(u.Scheme, ".")
@@ -325,10 +325,10 @@ func (s *Server) authorizeSubmit(w http.ResponseWriter, r *http.Request) {
 		s.page(w, http.StatusInternalServerError, "Error", "Please retry.", nil)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: cookieValue(id), Path: "/", MaxAge: int(requestTTL.Seconds()),
+	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: cookieValue(id), Path: "/", MaxAge: int(requestTTL.Seconds()), //nolint:gosec // Secure is off only for a plain-http development URL
 		HttpOnly: true, Secure: strings.HasPrefix(s.base(r), "https://"), SameSite: http.SameSiteLaxMode})
 	cfg := mailauth.Config(h.Meta, h.Registration, callback)
-	http.Redirect(w, r, cfg.AuthCodeURL(id, oauth2.S256ChallengeOption(p.Verifier), oauth2.SetAuthURLParam("login_hint", p.Email)), http.StatusFound)
+	http.Redirect(w, r, cfg.AuthCodeURL(id, oauth2.S256ChallengeOption(p.Verifier), oauth2.SetAuthURLParam("login_hint", p.Email)), http.StatusFound) //nolint:gosec // the discovered mail authorization endpoint
 }
 
 const authCookie = "jmap_mcp_auth"
@@ -379,7 +379,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		s.page(w, http.StatusBadRequest, "Expired", "This sign-in request has expired. Start again from your assistant.", nil)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true})
+	http.SetCookie(w, &http.Cookie{Name: authCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode})
 	if e := q.Get("error"); e != "" {
 		s.redirectError(w, r, p, "access_denied", "the mail server refused: "+e)
 		return
@@ -519,7 +519,8 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	access, refresh := store.RandomToken("jmcp_at_"), store.RandomToken("jmcp_rt_")
-	if err := s.st.SaveToken(r.Context(), access, store.AccessToken, g, accessTTL); err == nil {
+	err = s.st.SaveToken(r.Context(), access, store.AccessToken, g, accessTTL)
+	if err == nil {
 		err = s.st.SaveToken(r.Context(), refresh, store.RefreshToken, g, refreshTTL)
 	}
 	if err != nil {

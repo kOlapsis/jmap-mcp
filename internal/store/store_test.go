@@ -56,7 +56,7 @@ func TestSealBindsAAD(t *testing.T) {
 	if s.Unseal("b", b, &out) == nil {
 		t.Fatal("ciphertext moved to another record must not decrypt")
 	}
-	if s.Hash("x") != s.Hash("x") || s.Hash("x") == s.Hash("y") || s.Key("a") == nil {
+	if h := s.Hash("x"); h != s.Hash("x") || h == s.Hash("y") || s.Key("a") == nil {
 		t.Fatal("hash")
 	}
 }

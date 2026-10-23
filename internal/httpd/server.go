@@ -77,7 +77,7 @@ func (s *Server) Handler() http.Handler {
 	r.Get("/.well-known/oauth-authorization-server", s.authServerMetadata)
 	r.Get("/.well-known/oauth-authorization-server/mcp", s.authServerMetadata)
 	r.Group(func(r chi.Router) {
-		r.Use(httprate.Limit(60, time.Minute, httprate.WithKeyFuncs(clientIP)))
+		r.Use(httprate.LimitBy(60, time.Minute, clientIP))
 		r.Post("/register", s.register)
 		r.Post("/token", s.token)
 		r.Post("/revoke", s.revoke)
@@ -167,7 +167,7 @@ func validHost(h string) bool {
 		return false
 	}
 	for _, r := range h {
-		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune(".-:[]", r)) {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && !strings.ContainsRune(".-:[]", r) {
 			return false
 		}
 	}

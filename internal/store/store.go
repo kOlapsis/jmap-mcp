@@ -72,8 +72,9 @@ func Open(dir string, master []byte) (*Store, error) {
 func (s *Store) Close() error { return s.db.Close() }
 
 func (s *Store) migrate() error {
+	ctx := context.Background()
 	var version int
-	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil {
+	if err := s.db.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
 		return err
 	}
 	files, err := fs.Glob(migrations, "migrations/*.sql")
@@ -89,16 +90,16 @@ func (s *Store) migrate() error {
 		if err != nil {
 			return err
 		}
-		tx, err := s.db.Begin()
+		tx, err := s.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec(string(b)); err != nil {
-			tx.Rollback()
+		if _, err := tx.ExecContext(ctx, string(b)); err != nil {
+			_ = tx.Rollback()
 			return fmt.Errorf("migration %s: %w", f, err)
 		}
-		if _, err := tx.Exec(fmt.Sprintf("PRAGMA user_version = %d", i+1)); err != nil {
-			tx.Rollback()
+		if _, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", i+1)); err != nil {
+			_ = tx.Rollback()
 			return err
 		}
 		if err := tx.Commit(); err != nil {

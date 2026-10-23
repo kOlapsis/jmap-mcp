@@ -1,0 +1,31 @@
+version: "2"
+run:
+  build-tags:
+    - integration
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - misspell
+    - noctx
+    - unconvert
+  settings:
+    gosec:
+      excludes:
+        - G104 # unchecked errors are covered by errcheck
+        - G304 # file paths come from the operator's data directory
+        - G115 # integer conversions are on clamped values
+        - G704 # outbound requests go through netguard, which refuses private destinations
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, bodyclose, errcheck]
+      - path: internal/testenv/
+        linters: [gosec, noctx, bodyclose, errcheck]
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -151,7 +151,7 @@ type callback struct {
 }
 
 func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.Server, h *store.Host) (string, error) {
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", err
 	}
@@ -283,11 +283,11 @@ func openBrowser(u string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		cmd = exec.Command("open", u)
+		cmd = exec.CommandContext(context.Background(), "open", u) //nolint:gosec // u is the authorization URL built by this program
 	case "windows":
-		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", u)
+		cmd = exec.CommandContext(context.Background(), "rundll32", "url.dll,FileProtocolHandler", u) //nolint:gosec // u is the authorization URL built by this program
 	default:
-		cmd = exec.Command("xdg-open", u)
+		cmd = exec.CommandContext(context.Background(), "xdg-open", u) //nolint:gosec // u is the authorization URL built by this program
 	}
 	if err := cmd.Start(); err != nil {
 		return err

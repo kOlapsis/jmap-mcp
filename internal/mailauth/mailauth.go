@@ -301,7 +301,7 @@ type savingSource struct {
 func (s *savingSource) Token() (*oauth2.Token, error) {
 	t, err := s.src.Token()
 	if err != nil {
-		return nil, fmt.Errorf("%w (%v)", jmapc.ErrUnauthorized, err)
+		return nil, fmt.Errorf("%w (%w)", jmapc.ErrUnauthorized, err)
 	}
 	s.mu.Lock()
 	changed := t.AccessToken != s.last

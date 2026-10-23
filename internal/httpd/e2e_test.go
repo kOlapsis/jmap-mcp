@@ -98,7 +98,7 @@ func (b *bridge) authorizeWith(authURL, email string, login func(string) (string
 		}
 		resp, err = hc.Get(loc)
 	}
-	return nil, fmt.Errorf("authorization did not complete: %v", err)
+	return nil, fmt.Errorf("authorization did not complete: %w", err)
 }
 
 func TestEndToEndWithSDKClient(t *testing.T) {

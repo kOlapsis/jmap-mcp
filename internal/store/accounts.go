@@ -169,7 +169,7 @@ func (s *Store) SetDefault(ctx context.Context, userID, email string) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	res, err := tx.ExecContext(ctx, "UPDATE accounts SET is_default = 1 WHERE user_id = ? AND email = ?", userID, normEmail(email))
 	if err != nil {
 		return err
