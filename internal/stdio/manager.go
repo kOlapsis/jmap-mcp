@@ -121,6 +121,9 @@ func (m *manager) Connect(ctx context.Context, email string, device bool) (strin
 		return "", err
 	}
 	h, err := m.host(ctx, srv.Meta)
+	if errors.Is(err, mailauth.ErrNoRegistration) {
+		return "", fmt.Errorf("%w. The operator must declare a public OAuth client there (PKCE S256) accepting the redirect address http://127.0.0.1:<any port>/callback, then run: jmap-mcp client add %s --client-id <client ID>", err, email)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -143,6 +146,30 @@ func (m *manager) host(ctx context.Context, meta *mailauth.Meta) (*store.Host, e
 	}
 	h := &store.Host{Meta: meta, Registration: reg}
 	return h, m.st.SaveHost(ctx, meta.Issuer, hostKind, h)
+}
+
+// AddClient stores the static client of cfg for the authorization server of cfg.Args[1] and returns that server.
+func AddClient(ctx context.Context, cfg *config.Config, log *slog.Logger) (string, error) {
+	if len(cfg.Args) != 2 || cfg.Args[0] != "add" {
+		return "", errors.New("usage: jmap-mcp client add <email address or JMAP session URL> --client-id ID [--client-secret SECRET] [--auth-method none|client_secret_basic|client_secret_post]")
+	}
+	reg := &mailauth.Registration{ClientID: cfg.ClientID, ClientSecret: cfg.ClientSecret, AuthMethod: cfg.ClientAuth, RedirectURIs: []string{loopbackURI}}
+	if reg.AuthMethod == "" {
+		reg.AuthMethod = "none"
+		if reg.ClientSecret != "" {
+			reg.AuthMethod = "client_secret_basic"
+		}
+	}
+	m, err := newManager(cfg, log)
+	if err != nil {
+		return "", err
+	}
+	defer m.Close()
+	meta, err := m.env.StaticClient(ctx, cfg.Args[1], reg)
+	if err != nil {
+		return "", err
+	}
+	return meta.Issuer, m.st.SaveHost(ctx, meta.Issuer, hostKind, &store.Host{Meta: meta, Registration: reg})
 }
 
 type callback struct {

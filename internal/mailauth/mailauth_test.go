@@ -58,6 +58,10 @@ func TestScopesAndIssuer(t *testing.T) {
 	if s := strings.Join(Scopes(m), " "); s != "openid "+MailScope+" offline_access" {
 		t.Fatalf("scopes %s", s)
 	}
+	m.ScopesSupported = []string{"openid", "email", "profile", "offline_access"}
+	if s := strings.Join(Scopes(m), " "); s != "openid email offline_access" {
+		t.Fatalf("OpenID provider scopes %s", s)
+	}
 	if CheckIssuer(m, "") != nil {
 		t.Fatal("iss is optional when not advertised")
 	}

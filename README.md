@@ -237,7 +237,61 @@ If the operator turned anonymous registration off, declare the client statically
    enter the mail server (an email address or its URL), the client ID, the secret and the
    authentication method. They are stored encrypted in the bridge database.
 
-The local mode needs dynamic registration of public clients, which is the Stalwart default.
+The local mode registers itself as a public client, which Stalwart allows by default. When the
+authorization server does not allow it, declare a client with `jmap-mcp client add` (see the next
+section).
+
+## Mail server delegating to an external identity provider
+
+Some JMAP servers leave sign-in to an OpenID provider, for example Stalwart with an OIDC directory
+behind Authentik. jmap-mcp then signs the user in at that provider and presents the provider's
+access token to the JMAP server.
+
+**Discovery.** jmap-mcp finds the JMAP session from the email domain (SRV record or
+`/.well-known/jmap`), then reads the RFC 9728 metadata of the JMAP host at
+`/.well-known/oauth-protected-resource`: its `authorization_servers` must name the provider's
+issuer. The provider's own metadata comes from RFC 8414 or OpenID Connect discovery. Stalwart 0.16
+keeps naming itself in these metadata even with an OIDC directory, so have the reverse proxy answer
+`/.well-known/oauth-protected-resource` and its subpaths with the issuer of the provider. The
+provider must be under the same registrable domain as the JMAP host (`mail.example.com` and
+`auth.example.com`).
+
+**Scopes and audience.** jmap-mcp requests `openid`, `email` and `offline_access` when the provider
+advertises them, and the JMAP mail scope when it is advertised (providers usually do not have it).
+The JMAP server finds the account from the `email` claim (`claimUsername: email` in Stalwart). The
+access token must also carry the audience the JMAP server expects (`requireAudience` in Stalwart):
+use the client ID the JMAP server is configured for, otherwise the server refuses the token.
+
+**Static client.** Identity providers rarely offer dynamic client registration. Declare jmap-mcp on
+the provider as a public client with PKCE S256 and the `authorization_code` and `refresh_token`
+grants, with the redirect address of each mode you use:
+
+- HTTP mode: `https://mcp.example.com/callback`. Then enter the client on the `/admin` page of the
+  bridge, with the authentication method `none` for a public client.
+- Local mode: the loopback address on any port (RFC 8252), `http://127.0.0.1:<port>/callback`.
+  Providers usually accept it as a regular expression, for example
+  `^http://127[.]0[.]0[.]1:[0-9]+/callback$`. Then run:
+
+  ```sh
+  jmap-mcp client add alice@example.com --client-id stalwart-webui
+  ```
+
+  The command accepts an email address or the JMAP session URL, finds the provider and stores the
+  client in the data directory; a running server uses it at the next `connect_account`. For a
+  confidential client, add `--client-secret` (or set `JMAP_MCP_CLIENT_SECRET`) and, if needed,
+  `--auth-method client_secret_post` (the default with a secret is `client_secret_basic`).
+
+As long as no client is declared, the sign-in stops with a message that names the provider and
+gives these steps.
+
+**Example with Authentik.** Stalwart's OIDC directory points at the Authentik application
+`stalwart-webui` (`issuerUrl: https://auth.example.com/application/o/stalwart-webui/`,
+`requireAudience: stalwart-webui`, `claimUsername: email`). This application is a public client
+with PKCE and the scopes `openid`, `email`, `profile` and `offline_access`, and its tokens carry the
+audience Stalwart expects, so jmap-mcp reuses it: add the redirect addresses above to it, then
+declare the client ID `stalwart-webui` with the method `none`. Authentik grants consent implicitly,
+so once the loopback pattern is allowed, any program on a user's computer can obtain a token for
+that user without them noticing; allow it only if the local mode is needed.
 
 ## Configuration
 
@@ -254,7 +308,8 @@ environment variable `JMAP_MCP_<FLAG>` (for example `JMAP_MCP_ENABLE_SEND=true`)
 | `--allow-private-networks` | `false` | Allow mail servers on private or loopback addresses (for example on the same LAN). It disables part of the SSRF protection. |
 
 Commands: `jmap-mcp` or `jmap-mcp stdio` (local mode), `jmap-mcp serve` (HTTP mode),
-`jmap-mcp admin-token`, `jmap-mcp healthcheck`, `jmap-mcp version`.
+`jmap-mcp client add` (static client for the local mode), `jmap-mcp admin-token`,
+`jmap-mcp healthcheck`, `jmap-mcp version`.
 
 ## Exposed endpoints
 
@@ -326,7 +381,8 @@ golangci-lint run ./...
 
 The integration tests start `stalwartlabs/stalwart`, complete its setup through its API, create
 accounts, import sample messages and run the real OAuth flows (browser, device, HTTP bridge with
-the MCP SDK client). The unit tests replay JMAP exchanges recorded from those runs; refresh them
+the MCP SDK client). They also switch Stalwart to an OIDC directory backed by a minimal OpenID
+provider (`internal/testenv/idp.go`) to cover the static client of both modes. The unit tests replay JMAP exchanges recorded from those runs; refresh them
 with `JMAP_MCP_RECORD=$PWD/internal/tools/testdata/read go test -tags integration -run TestStalwartReadTools ./internal/tools`
 (and `write` / `TestStalwartWriteTools`).
 

@@ -327,8 +327,11 @@ func (s *Server) authorizeSubmit(w http.ResponseWriter, r *http.Request) {
 	h, err := s.mailHost(r.Context(), srv.Meta, callback)
 	if err != nil {
 		s.log.Warn("mail server registration failed", "issuer", srv.Meta.Issuer, "err", err)
-		s.page(w, http.StatusBadGateway, "Mail server not ready",
-			"The mail server refused to register this bridge as an OAuth client. The operator of the bridge can declare a client on the mail server for the redirect address below, then enter it on the /admin page of the bridge.",
+		msg := "The authorization server " + srv.Meta.Issuer + " refused to register this bridge as an OAuth client. The operator of the bridge can declare a client there for the redirect address below, then enter it on the /admin page of the bridge."
+		if errors.Is(err, mailauth.ErrNoRegistration) {
+			msg = "The authorization server " + srv.Meta.Issuer + " does not support dynamic client registration. The operator of the bridge must declare an OAuth client there with the redirect address below, then enter it on the /admin page of the bridge."
+		}
+		s.page(w, http.StatusBadGateway, "Authorization server not ready", msg,
 			map[string]string{"Redirect address": callback, "Authorization server": srv.Meta.Issuer})
 		return
 	}

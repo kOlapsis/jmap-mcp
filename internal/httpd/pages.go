@@ -3,7 +3,6 @@ package httpd
 import (
 	"crypto/subtle"
 	"encoding/base64"
-	"errors"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -119,34 +118,11 @@ func (s *Server) admin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) saveStatic(r *http.Request, callback string) error {
-	server := strings.TrimSpace(r.PostFormValue("server"))
-	id, secret, method := strings.TrimSpace(r.PostFormValue("client_id")), r.PostFormValue("client_secret"), r.PostFormValue("auth_method")
-	switch {
-	case id == "":
-		return errors.New("the client ID is required")
-	case method != "none" && method != "client_secret_basic" && method != "client_secret_post":
-		return errors.New("unknown client authentication")
-	case method != "none" && secret == "":
-		return errors.New("this client authentication needs a secret")
-	}
-	var sessionURL string
-	if strings.Contains(server, "@") {
-		srv, err := s.env.Discover(r.Context(), server)
-		if err != nil {
-			return err
-		}
-		sessionURL = srv.SessionURL
-	} else {
-		if err := s.env.Net.CheckURL(server); err != nil {
-			return err
-		}
-		sessionURL = server
-	}
-	meta, err := s.env.DiscoverAuthServer(r.Context(), sessionURL)
+	reg := &mailauth.Registration{ClientID: strings.TrimSpace(r.PostFormValue("client_id")), ClientSecret: r.PostFormValue("client_secret"),
+		AuthMethod: r.PostFormValue("auth_method"), RedirectURIs: []string{callback}}
+	meta, err := s.env.StaticClient(r.Context(), strings.TrimSpace(r.PostFormValue("server")), reg)
 	if err != nil {
 		return err
 	}
-	return s.st.SaveHost(r.Context(), meta.Issuer, hostKind, &store.Host{Meta: meta, Registration: &mailauth.Registration{
-		ClientID: id, ClientSecret: secret, AuthMethod: method, RedirectURIs: []string{callback}, Static: true,
-	}})
+	return s.st.SaveHost(r.Context(), meta.Issuer, hostKind, &store.Host{Meta: meta, Registration: reg})
 }

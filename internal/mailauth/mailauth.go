@@ -215,11 +215,14 @@ func (e *Env) getJSON(ctx context.Context, u string, out any) error {
 	return json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(out)
 }
 
+// ErrNoRegistration means the authorization server has no registration endpoint (RFC 7591).
+var ErrNoRegistration = errors.New("does not support dynamic client registration")
+
 // Register registers a client dynamically (RFC 7591). A confidential registration
 // falls back to a public PKCE client when the server only allows anonymous public clients.
 func (e *Env) Register(ctx context.Context, m *Meta, name string, redirectURIs []string, confidential bool) (*Registration, error) {
 	if m.RegistrationEndpoint == "" {
-		return nil, errors.New("the mail server does not support dynamic client registration")
+		return nil, fmt.Errorf("the authorization server %s %w", m.Issuer, ErrNoRegistration)
 	}
 	grants := []string{"authorization_code", "refresh_token"}
 	if m.DeviceAuthorizationEndpoint != "" && !confidential {
@@ -256,10 +259,34 @@ func (e *Env) Register(ctx context.Context, m *Meta, name string, redirectURIs [
 	return nil, fmt.Errorf("dynamic client registration refused: %w", errors.Join(errs...))
 }
 
-// Scopes returns the scopes to request: openid, the JMAP mail scope and offline_access when advertised.
+// StaticClient validates a client declared by the operator for server (an email address or a JMAP session URL) and returns the metadata of its authorization server.
+func (e *Env) StaticClient(ctx context.Context, server string, r *Registration) (*Meta, error) {
+	switch {
+	case r.ClientID == "":
+		return nil, errors.New("the client ID is required")
+	case r.AuthMethod != "none" && r.AuthMethod != "client_secret_basic" && r.AuthMethod != "client_secret_post":
+		return nil, errors.New("unknown client authentication")
+	case r.AuthMethod != "none" && r.ClientSecret == "":
+		return nil, errors.New("this client authentication needs a secret")
+	}
+	r.Static = true
+	if strings.Contains(server, "@") {
+		srv, err := e.Discover(ctx, server)
+		if err != nil {
+			return nil, err
+		}
+		return srv.Meta, nil
+	}
+	if err := e.Net.CheckURL(server); err != nil {
+		return nil, err
+	}
+	return e.DiscoverAuthServer(ctx, server)
+}
+
+// Scopes returns the scopes to request: openid, email, the JMAP mail scope and offline_access when advertised.
 func Scopes(m *Meta) []string {
 	var s []string
-	for _, want := range []string{"openid", MailScope, "offline_access"} {
+	for _, want := range []string{"openid", "email", MailScope, "offline_access"} {
 		if slices.Contains(m.ScopesSupported, want) {
 			s = append(s, want)
 		}

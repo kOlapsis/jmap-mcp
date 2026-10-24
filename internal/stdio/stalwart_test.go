@@ -152,3 +152,91 @@ func hasTool(l *mcp.ListToolsResult, name string) bool {
 	}
 	return false
 }
+
+func TestStalwartExternalIdP(t *testing.T) {
+	keyring.MockInit()
+	sw := testenv.Start(t)
+	idp := testenv.StartIdP(t, "stalwart-webui", "alice@"+testenv.Domain)
+	idp.Redirect = regexp.MustCompile(`^http://127[.]0[.]0[.]1:[0-9]+/callback$`)
+	sw.UseIdP(t, idp)
+	cfg := &config.Config{DataDir: t.TempDir(), Net: sw.Net()}
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	ctx := context.Background()
+
+	hc := cfg.Net.Client(10 * time.Second)
+	req, _ := http.NewRequest(http.MethodGet, "https://"+testenv.Host+"/jmap/session", nil)
+	req.Header.Set("Authorization", "Bearer "+idp.AccessToken("another-app"))
+	resp, err := hc.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("token of another application: HTTP %d %s", resp.StatusCode, body)
+	}
+
+	m, err := newManager(cfg, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.browser = func(u string) error {
+		go func() {
+			redirect, err := idp.Authorize(u)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			resp, err := http.Get(redirect)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			resp.Body.Close()
+		}()
+		return nil
+	}
+	if _, err := m.Connect(ctx, idp.Email, false); err == nil || !strings.Contains(err.Error(), idp.Issuer+" does not support dynamic client registration") ||
+		!strings.Contains(err.Error(), "jmap-mcp client add "+idp.Email) {
+		t.Fatalf("expected the static client instructions, got %v", err)
+	}
+	cfg.Args, cfg.ClientID = []string{"add", idp.Email}, idp.ClientID
+	if iss, err := AddClient(ctx, cfg, log); err != nil || iss != idp.Issuer {
+		t.Fatalf("client add: %q %v", iss, err)
+	}
+	msg, err := m.Connect(ctx, idp.Email, false)
+	if err != nil || !strings.Contains(msg, "connected") {
+		t.Fatalf("connect with the static client: %q %v", msg, err)
+	}
+	if s := idp.Scopes(); len(s) != 1 || s[0] != "openid email offline_access" {
+		t.Fatalf("requested scopes %q", s)
+	}
+	m.Close()
+
+	// Each refresh rotates the refresh token: the second one only works if the first rotation was saved.
+	for i := 1; i <= 2; i++ {
+		m, err := newManager(cfg, log)
+		if err != nil {
+			t.Fatal(err)
+		}
+		rows, _ := m.st.Accounts(ctx, store.LocalUser)
+		if len(rows) != 1 {
+			t.Fatalf("%d accounts", len(rows))
+		}
+		old := rows[0].Token.RefreshToken
+		expired := *rows[0].Token
+		expired.Expiry = time.Now().Add(-time.Hour)
+		if err := m.st.UpdateToken(ctx, rows[0].ID, &expired); err != nil {
+			t.Fatal(err)
+		}
+		accts, _ := m.Accounts(ctx)
+		if _, err := accts[0].Client.MailAccount(ctx); err != nil {
+			t.Fatalf("refresh %d: %v", i, err)
+		}
+		rows, _ = m.st.Accounts(ctx, store.LocalUser)
+		if rows[0].Token.RefreshToken == old || idp.Refreshes() != i {
+			t.Fatalf("refresh %d: rotated token not saved (%d refreshes, same token %v)", i, idp.Refreshes(), rows[0].Token.RefreshToken == old)
+		}
+		m.Close()
+	}
+}

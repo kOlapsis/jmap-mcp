@@ -6,6 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-24
+
+### Added
+
+- Mail servers that delegate sign-in to an external OpenID provider, such as Stalwart with an OIDC
+  directory behind Authentik: the `email` scope is requested when the provider advertises it, and
+  `jmap-mcp client add` declares a static client for the local mode.
+
+### Changed
+
+- When the authorization server does not support dynamic client registration, the sign-in error
+  names it and explains how to declare a static client.
+
+### Fixed
+
+- A rotated refresh token is saved even when the access token issued with it is unchanged.
+
 ## [0.2.0] - 2026-10-24
 
 ### Added
@@ -91,7 +108,8 @@ First release.
 - Integration tests against Stalwart in Docker, and unit tests replaying the
   recorded JMAP exchanges.
 
-[Unreleased]: https://github.com/kOlapsis/jmap-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kOlapsis/jmap-mcp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kOlapsis/jmap-mcp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/kOlapsis/jmap-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/kOlapsis/jmap-mcp/releases/tag/v0.1.0

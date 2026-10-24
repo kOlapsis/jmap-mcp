@@ -56,6 +56,13 @@ func run() error {
 		}
 		defer srv.Close()
 		return srv.Run(ctx)
+	case "client":
+		issuer, err := stdio.AddClient(ctx, cfg, log)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Static client saved for the authorization server", issuer)
+		return nil
 	case "admin-token":
 		srv, err := httpd.New(cfg, version, slog.New(slog.DiscardHandler))
 		if err != nil {

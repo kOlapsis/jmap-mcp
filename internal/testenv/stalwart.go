@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/http/httputil"
 	"net/mail"
 	"net/url"
 	"os"
@@ -38,6 +40,8 @@ type Stalwart struct {
 	AdminPass string
 	name      string
 	hc        *http.Client
+	front     string
+	idp       *IdP
 }
 
 // Start runs Stalwart, completes its bootstrap through the API and waits until it serves HTTPS.
@@ -49,7 +53,7 @@ func Start(t testing.TB) *Stalwart {
 	s := &Stalwart{name: fmt.Sprintf("jmap-mcp-test-%d", time.Now().UnixNano())}
 	bootPass := randomString(16)
 	run(t, "docker", "run", "-d", "--rm", "--name", s.name, "-e", "STALWART_RECOVERY_ADMIN=admin:"+bootPass,
-		"-p", "127.0.0.1::443", "-p", "127.0.0.1::8080", Image)
+		"--add-host", AuthHost+":host-gateway", "-p", "127.0.0.1::443", "-p", "127.0.0.1::8080", Image)
 	t.Cleanup(func() {
 		if os.Getenv("JMAP_MCP_KEEP_CONTAINER") == "" {
 			_ = exec.Command("docker", "rm", "-f", s.name).Run()
@@ -78,6 +82,12 @@ func Start(t testing.TB) *Stalwart {
 		t.Fatalf("stalwart bootstrap failed: %+v", setup)
 	}
 	s.AdminUser, s.AdminPass = created.Updated["singleton"].Username, created.Updated["singleton"].Secret
+	s.restart(t)
+	return s
+}
+
+func (s *Stalwart) restart(t testing.TB) {
+	t.Helper()
 	run(t, "docker", "restart", s.name)
 	s.Addr = s.port(t, "443")
 	waitFor(t, func() error {
@@ -91,14 +101,60 @@ func Start(t testing.TB) *Stalwart {
 		}
 		return nil
 	})
-	return s
 }
 
-// Net returns guard options mapping the Stalwart names to the container.
-func (s *Stalwart) Net() netguard.Options {
-	return netguard.Options{AllowPrivate: true, InsecureTLS: true, Resolve: map[string]string{
-		Host + ":443": s.Addr, Domain + ":443": s.Addr,
+// UseIdP makes p the account directory of Stalwart, behind a proxy publishing RFC 9728 metadata that name p.
+func (s *Stalwart) UseIdP(t testing.TB, p *IdP) {
+	t.Helper()
+	res := s.JMAP(t, s.AdminUser, s.AdminPass, []any{[]any{"x:Directory/set", map[string]any{"create": map[string]any{"d": map[string]any{
+		"@type": "Oidc", "description": "test IdP", "issuerUrl": p.Issuer, "requireAudience": p.ClientID, "claimUsername": "email",
+	}}}, "d"}})
+	var dir struct {
+		Created map[string]struct {
+			ID string `json:"id"`
+		} `json:"created"`
+	}
+	if json.Unmarshal(res[0][1], &dir) != nil || dir.Created["d"].ID == "" {
+		t.Fatalf("create OIDC directory: %s", res[0][1])
+	}
+	res = s.JMAP(t, s.AdminUser, s.AdminPass, []any{[]any{"x:Authentication/set", map[string]any{"update": map[string]any{
+		"singleton": map[string]any{"directoryId": dir.Created["d"].ID},
+	}}, "a"}})
+	if !bytes.Contains(res[0][1], []byte(`"updated"`)) {
+		t.Fatalf("select OIDC directory: %s", res[0][1])
+	}
+	s.restart(t)
+	prm, _ := json.Marshal(map[string]any{"resource": "https://" + Host, "authorization_servers": []string{p.Issuer}, "bearer_methods_supported": []string{"header"}})
+	proxy := &httputil.ReverseProxy{Transport: s.hc.Transport, Rewrite: func(r *httputil.ProxyRequest) {
+		r.SetURL(&url.URL{Scheme: "https", Host: s.Addr})
+		r.Out.Host = r.In.Host
 	}}
+	front := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/.well-known/oauth-protected-resource" || strings.HasPrefix(r.URL.Path, "/.well-known/oauth-protected-resource/") {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(prm)
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}))
+	t.Cleanup(front.Close)
+	s.front, s.idp = strings.TrimPrefix(front.URL, "https://"), p
+}
+
+// Net returns guard options mapping the Stalwart names to the container, or to its proxy and IdP after UseIdP.
+func (s *Stalwart) Net() netguard.Options {
+	addr := s.Addr
+	if s.front != "" {
+		addr = s.front
+	}
+	n := netguard.Options{AllowPrivate: true, InsecureTLS: true, Resolve: map[string]string{
+		Host + ":443": addr, Domain + ":443": addr,
+	}}
+	if s.idp != nil {
+		n.AllowHTTP = true
+		n.Resolve[s.idp.hostPort] = s.idp.addr
+	}
+	return n
 }
 
 // CreateUser creates a mailbox user and returns its address.

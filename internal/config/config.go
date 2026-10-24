@@ -25,6 +25,11 @@ type Config struct {
 	EnableSend bool
 	Net        netguard.Options
 
+	Args         []string
+	ClientID     string
+	ClientSecret string
+	ClientAuth   string
+
 	// Development and test only.
 	DevToken      string
 	DevSessionURL string
@@ -56,18 +61,27 @@ func Parse(args []string, stderr io.Writer) (*Config, error) {
 	boolean(&c.Net.AllowHTTP, "dev-allow-http", "development only: accept plain http mail servers")
 	boolean(&c.Net.InsecureTLS, "dev-insecure-tls", "development only: skip TLS certificate verification")
 	str(&resolve, "dev-resolve", "", "development only: comma-separated host:port=ip:port overrides")
+	str(&c.ClientID, "client-id", "", "client add: client ID declared at the authorization server")
+	str(&c.ClientSecret, "client-secret", "", "client add: client secret, empty for a public client")
+	str(&c.ClientAuth, "auth-method", "", "client add: none (default without secret), client_secret_basic (default with a secret) or client_secret_post")
 	str(&c.DevToken, "dev-token", "", "development only: static JMAP bearer token (stdio)")
 	str(&c.DevSessionURL, "dev-session-url", "", "development only: JMAP session URL used with --dev-token")
 	fs.Usage = func() {
-		fmt.Fprintf(stderr, "Usage: jmap-mcp [stdio|serve|admin-token|healthcheck|version] [flags]\n\n  stdio         MCP server on standard input and output (default)\n  serve         MCP server over HTTP with OAuth\n  admin-token   print the token of the /admin page\n  healthcheck   exit 0 when the local HTTP server answers /healthz\n\nFlags (also read from %s<FLAG_NAME>):\n", EnvPrefix)
+		fmt.Fprintf(stderr, "Usage: jmap-mcp [stdio|serve|client add|admin-token|healthcheck|version] [flags]\n\n  stdio         MCP server on standard input and output (default)\n  serve         MCP server over HTTP with OAuth\n  client add <email or JMAP session URL> --client-id ID\n                declare a static OAuth client for the local mode\n  admin-token   print the token of the /admin page\n  healthcheck   exit 0 when the local HTTP server answers /healthz\n\nFlags (also read from %s<FLAG_NAME>):\n", EnvPrefix)
 		fs.VisitAll(func(f *flag.Flag) {
 			if !strings.HasPrefix(f.Name, "dev-") {
 				fmt.Fprintf(stderr, "  --%s\n    \t%s\n", f.Name, f.Usage)
 			}
 		})
 	}
-	if err := fs.Parse(args); err != nil {
-		return nil, err
+	for {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		if fs.NArg() == 0 {
+			break
+		}
+		c.Args, args = append(c.Args, fs.Arg(0)), fs.Args()[1:]
 	}
 	if err := c.LogLevel.UnmarshalText([]byte(level)); err != nil {
 		return nil, fmt.Errorf("invalid log level %q", level)
