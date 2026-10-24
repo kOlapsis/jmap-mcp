@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -121,6 +122,45 @@ func TestDiscoverRefusesForeignAuthorizationServer(t *testing.T) {
 	s, err := e.Discover(context.Background(), "alice@example.com")
 	if err != nil || s.Meta.Issuer != "https://idp.example.com" {
 		t.Fatalf("same-domain authorization server refused: %v", err)
+	}
+}
+
+func TestRotatedRefreshTokenIsSaved(t *testing.T) {
+	var mu sync.Mutex
+	valid, n := "rt0", 0
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+		if r.URL.Path == "/token" {
+			if r.PostFormValue("refresh_token") != valid {
+				http.Error(w, `{"error":"invalid_grant"}`, http.StatusBadRequest)
+				return
+			}
+			n++
+			valid = fmt.Sprintf("rt%d", n)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `{"access_token":"at","token_type":"Bearer","expires_in":1,"refresh_token":%q}`, valid)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"capabilities":{},"accounts":{},"primaryAccounts":{},"username":"a","apiUrl":"https://mail.example.com/api","state":"s"}`)
+	}))
+	defer srv.Close()
+	u, _ := url.Parse(srv.URL)
+	e := NewEnv(netguard.Options{AllowPrivate: true, InsecureTLS: true, Resolve: map[string]string{"mail.example.com:443": u.Host}})
+	cfg := &oauth2.Config{ClientID: "c", Endpoint: oauth2.Endpoint{TokenURL: "https://mail.example.com/token", AuthStyle: oauth2.AuthStyleInParams}}
+	var saved []string
+	c := e.Client(cfg, &oauth2.Token{AccessToken: "at", RefreshToken: "rt0", Expiry: time.Now().Add(-time.Minute)}, "https://mail.example.com/session", func(t *oauth2.Token) {
+		saved = append(saved, t.RefreshToken)
+	})
+	for range 2 {
+		c.Invalidate()
+		if _, err := c.Session(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if strings.Join(saved, " ") != "rt1 rt2" {
+		t.Fatalf("saved refresh tokens %v", saved)
 	}
 }
 

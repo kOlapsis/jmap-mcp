@@ -350,7 +350,7 @@ func IDTokenSubject(m *Meta, tok *oauth2.Token, cfg *oauth2.Config, nonce string
 
 // Client returns a JMAP client whose token refreshes transparently; save is called with every new token.
 func (e *Env) Client(cfg *oauth2.Config, tok *oauth2.Token, sessionURL string, save func(*oauth2.Token)) *jmapc.Client {
-	src := &savingSource{src: cfg.TokenSource(e.Context(context.Background()), tok), last: tok.AccessToken, save: save}
+	src := &savingSource{src: cfg.TokenSource(e.Context(context.Background()), tok), last: *tok, save: save}
 	return &jmapc.Client{
 		HTTP:       &http.Client{Timeout: e.HTTP.Timeout, CheckRedirect: e.HTTP.CheckRedirect, Transport: &BearerTransport{Source: src, Base: e.HTTP.Transport}},
 		SessionURL: sessionURL,
@@ -390,7 +390,7 @@ type savingSource struct {
 	save func(*oauth2.Token)
 
 	mu   sync.Mutex
-	last string
+	last oauth2.Token
 }
 
 func (s *savingSource) Token() (*oauth2.Token, error) {
@@ -399,8 +399,8 @@ func (s *savingSource) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("%w (%w)", jmapc.ErrUnauthorized, err)
 	}
 	s.mu.Lock()
-	changed := t.AccessToken != s.last
-	s.last = t.AccessToken
+	changed := t.AccessToken != s.last.AccessToken || t.RefreshToken != s.last.RefreshToken
+	s.last = *t
 	s.mu.Unlock()
 	if changed && s.save != nil {
 		s.save(t)
