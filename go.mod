@@ -12,7 +12,7 @@ require (
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/net v0.62.0
 	golang.org/x/oauth2 v0.37.0
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
