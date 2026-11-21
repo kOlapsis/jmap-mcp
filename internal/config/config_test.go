@@ -16,3 +16,37 @@ func TestParseFlagsAfterArguments(t *testing.T) {
 		t.Fatalf("%+v", c)
 	}
 }
+
+func TestStatelessFlag(t *testing.T) {
+	t.Run("disabled by default", func(t *testing.T) {
+		t.Setenv(EnvPrefix+"STATELESS", "false")
+		cfg, err := Parse([]string{"serve"}, io.Discard)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Stateless {
+			t.Fatal("Stateless = true, want false by default")
+		}
+	})
+
+	t.Run("enabled by flag", func(t *testing.T) {
+		cfg, err := Parse([]string{"serve", "--stateless"}, io.Discard)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cfg.Stateless {
+			t.Fatal("Stateless = false, want true")
+		}
+	})
+
+	t.Run("enabled by environment", func(t *testing.T) {
+		t.Setenv(EnvPrefix+"STATELESS", "true")
+		cfg, err := Parse([]string{"serve"}, io.Discard)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cfg.Stateless {
+			t.Fatal("Stateless = false, want true from environment")
+		}
+	})
+}

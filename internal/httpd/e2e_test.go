@@ -34,10 +34,14 @@ type bridge struct {
 	net  netguard.Options
 }
 
-func newBridge(t *testing.T, resolve map[string]string) *bridge {
+func newBridge(t *testing.T, resolve map[string]string, stateless ...bool) *bridge {
 	t.Helper()
 	n := netguard.Options{AllowPrivate: true, InsecureTLS: true, AllowHTTP: true, Resolve: resolve}
-	srv, err := New(&config.Config{DataDir: t.TempDir(), Net: n}, "test", slog.New(slog.DiscardHandler))
+	cfg := &config.Config{DataDir: t.TempDir(), Net: n}
+	if len(stateless) > 0 {
+		cfg.Stateless = stateless[0]
+	}
+	srv, err := New(cfg, "test", slog.New(slog.DiscardHandler))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,6 +146,58 @@ func TestEndToEndWithSDKClient(t *testing.T) {
 		if tool.Name == "connect_account" || tool.Name == "send_email" {
 			t.Errorf("%s must not be exposed in HTTP mode with sending disabled", tool.Name)
 		}
+	}
+}
+
+func TestEndToEndWithStatelessSDKClient(t *testing.T) {
+	mail := newFakeMail(t)
+	b := newBridge(t, mailResolve(mail), true)
+	ctx := context.Background()
+	h, err := auth.NewAuthorizationCodeHandler(&auth.AuthorizationCodeHandlerConfig{
+		DynamicClientRegistrationConfig: &auth.DynamicClientRegistrationConfig{Metadata: &oauthex.ClientRegistrationMetadata{
+			RedirectURIs: []string{clientRedirect}, ClientName: "stateless e2e client", TokenEndpointAuthMethod: "none",
+			GrantTypes: []string{"authorization_code", "refresh_token"},
+		}},
+		RedirectURL:         clientRedirect,
+		RequestRefreshToken: true,
+		AuthorizationCodeFetcher: func(ctx context.Context, args *auth.AuthorizationArgs) (*auth.AuthorizationResult, error) {
+			q, err := b.authorize(args.URL, "Alice@example.com")
+			if err != nil {
+				return nil, err
+			}
+			return &auth.AuthorizationResult{Code: q.Get("code"), State: q.Get("state"), Iss: q.Get("iss")}, nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cs, err := mcp.NewClient(&mcp.Implementation{Name: "stateless-e2e", Version: "1"}, nil).Connect(ctx,
+		&mcp.StreamableClientTransport{Endpoint: b.http.URL + "/mcp", OAuthHandler: h}, nil)
+	if err != nil {
+		t.Fatalf("connect in stateless mode: %v", err)
+	}
+	defer cs.Close()
+
+	tl, err := cs.ListTools(ctx, nil)
+	if err != nil {
+		t.Fatalf("tools/list in stateless mode: %v", err)
+	}
+	foundMailboxTool := false
+	for _, tool := range tl.Tools {
+		if tool.Name == "list_mailboxes" {
+			foundMailboxTool = true
+		}
+		if tool.Name == "connect_account" || tool.Name == "send_email" {
+			t.Errorf("%s must not be exposed in HTTP mode with sending disabled", tool.Name)
+		}
+	}
+	if !foundMailboxTool {
+		t.Fatal("list_mailboxes not found in tools/list response")
+	}
+
+	res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "list_mailboxes", Arguments: map[string]any{}})
+	if err != nil || res.IsError || len(res.Content) == 0 || !strings.Contains(res.Content[0].(*mcp.TextContent).Text, `"path":"Inbox"`) {
+		t.Fatalf("list_mailboxes in stateless mode: %v %+v", err, res)
 	}
 }
 
@@ -475,5 +531,85 @@ func TestRateLimitKey(t *testing.T) {
 		if got, _ := clientIP(r); got != c.want {
 			t.Errorf("clientIP(%s, %q) = %s, want %s", c.remote, c.xff, got, c.want)
 		}
+	}
+}
+
+func TestStatelessHTTPMultiRoundTrip(t *testing.T) {
+	ctx := context.Background()
+
+	srv := mcp.NewServer(
+		&mcp.Implementation{Name: "stateless-mrtr-test", Version: "1"},
+		nil,
+	)
+	mcp.AddTool(srv, &mcp.Tool{Name: "confirm"}, func(
+		ctx context.Context,
+		req *mcp.CallToolRequest,
+		_ struct{},
+	) (*mcp.CallToolResult, any, error) {
+		if len(req.Params.InputResponses) == 0 {
+			return &mcp.CallToolResult{
+				InputRequests: mcp.InputRequestMap{
+					"confirm": &mcp.ElicitParams{
+						Mode:    "form",
+						Message: "Continue?",
+					},
+				},
+				RequestState: "state-1",
+			}, nil, nil
+		}
+
+		if _, ok := req.Params.InputResponses["confirm"].(*mcp.ElicitResult); !ok {
+			return nil, nil, fmt.Errorf("missing elicitation response")
+		}
+
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: "retried successfully"},
+			},
+		}, nil, nil
+	})
+
+	handler := mcp.NewStreamableHTTPHandler(
+		func(*http.Request) *mcp.Server { return srv },
+		&mcp.StreamableHTTPOptions{Stateless: true},
+	)
+	httpServer := httptest.NewServer(handler)
+	defer httpServer.Close()
+
+	elicitationCalled := false
+	client := mcp.NewClient(
+		&mcp.Implementation{Name: "stateless-mrtr-client", Version: "1"},
+		&mcp.ClientOptions{
+			ElicitationHandler: func(
+				_ context.Context,
+				_ *mcp.ElicitRequest,
+			) (*mcp.ElicitResult, error) {
+				elicitationCalled = true
+				return &mcp.ElicitResult{Action: "accept"}, nil
+			},
+		},
+	)
+
+	cs, err := client.Connect(ctx,
+		&mcp.StreamableClientTransport{Endpoint: httpServer.URL},
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("connect: %v", err)
+	}
+	defer cs.Close()
+
+	res, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: "confirm"})
+	if err != nil {
+		t.Fatalf("CallTool: %v", err)
+	}
+	if !elicitationCalled {
+		t.Fatal("elicitation handler was not called")
+	}
+	if res.NeedsInput() {
+		t.Fatal("CallTool still needs input after automatic retry")
+	}
+	if len(res.Content) == 0 || res.Content[0].(*mcp.TextContent).Text != "retried successfully" {
+		t.Fatalf("unexpected result: %+v", res)
 	}
 }

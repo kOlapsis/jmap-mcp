@@ -23,6 +23,7 @@ type Config struct {
 	PublicURL  string
 	LogLevel   slog.Level
 	EnableSend bool
+	Stateless  bool
 	Net        netguard.Options
 
 	Args         []string
@@ -57,6 +58,7 @@ func Parse(args []string, stderr io.Writer) (*Config, error) {
 	str(&c.PublicURL, "public-url", "", "public base URL of the bridge (default: derived from X-Forwarded-* headers)")
 	str(&level, "log-level", "info", "log level: debug, info (default), warn, error")
 	boolean(&c.EnableSend, "enable-send", "allow sending email (always confirmed by the user)")
+	boolean(&c.Stateless, "stateless", "use stateless Streamable HTTP for MCP requests (serve)")
 	boolean(&c.Net.AllowPrivate, "allow-private-networks", "allow mail servers on private or loopback addresses (disables part of the SSRF protection)")
 	boolean(&c.Net.AllowHTTP, "dev-allow-http", "development only: accept plain http mail servers")
 	boolean(&c.Net.InsecureTLS, "dev-insecure-tls", "development only: skip TLS certificate verification")
