@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Optional stateless Streamable HTTP transport for `serve`, enabled with `--stateless` or
+  `JMAP_MCP_STATELESS=true`.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

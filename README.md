@@ -305,6 +305,7 @@ environment variable `JMAP_MCP_<FLAG>` (for example `JMAP_MCP_ENABLE_SEND=true`)
 | `--public-url` | from `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Prefix` | Public base URL of the bridge. |
 | `--log-level` | `info` | `debug`, `info`, `warn` or `error`. Logs never contain secrets, codes or email bodies. |
 | `--enable-send` | `false` | Register `send_email`. |
+| `--stateless` | `false` | Use stateless MCP Streamable HTTP transport (`serve`) instead of stateful sessions. POST-only; GET and DELETE return 405. |
 | `--allow-private-networks` | `false` | Allow mail servers on private or loopback addresses (for example on the same LAN). It disables part of the SSRF protection. |
 
 Commands: `jmap-mcp` or `jmap-mcp stdio` (local mode), `jmap-mcp serve` (HTTP mode),
