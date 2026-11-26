@@ -46,6 +46,16 @@ type Registration struct {
 	AuthMethod   string   `json:"auth_method"`
 	RedirectURIs []string `json:"redirect_uris"`
 	Static       bool     `json:"static,omitempty"`
+	// GrantTypes are the grants registered dynamically; empty for static clients and older records.
+	GrantTypes []string `json:"grant_types,omitempty"`
+}
+
+// DeviceGrant is the device authorization grant type (RFC 8628).
+const DeviceGrant = "urn:ietf:params:oauth:grant-type:device_code"
+
+// AllowsDevice reports whether the client may use the device flow; unknown grants are assumed to allow it.
+func (r *Registration) AllowsDevice() bool {
+	return len(r.GrantTypes) == 0 || slices.Contains(r.GrantTypes, DeviceGrant)
 }
 
 // Env bundles the guarded HTTP client used for every request to mail servers.
@@ -224,37 +234,42 @@ func (e *Env) Register(ctx context.Context, m *Meta, name string, redirectURIs [
 	if m.RegistrationEndpoint == "" {
 		return nil, fmt.Errorf("the authorization server %s %w", m.Issuer, ErrNoRegistration)
 	}
-	grants := []string{"authorization_code", "refresh_token"}
+	base := []string{"authorization_code", "refresh_token"}
+	grantSets := [][]string{base}
 	if m.DeviceAuthorizationEndpoint != "" && !confidential {
-		grants = append(grants, "urn:ietf:params:oauth:grant-type:device_code")
+		// Stalwart 1.x offers the device flow but refuses it to dynamically registered clients
+		// (invalid_client_metadata); such a client then signs in through the browser only.
+		grantSets = [][]string{append(slices.Clone(base), DeviceGrant), base}
 	}
 	methods := []string{"none"}
 	if confidential {
 		methods = []string{"client_secret_basic", "client_secret_post", "none"}
 	}
 	var errs []error
-	for _, method := range methods {
-		if len(m.TokenEndpointAuthMethodsSupported) > 0 && !slices.Contains(m.TokenEndpointAuthMethodsSupported, method) {
-			continue
+	for _, grants := range grantSets {
+		for _, method := range methods {
+			if len(m.TokenEndpointAuthMethodsSupported) > 0 && !slices.Contains(m.TokenEndpointAuthMethodsSupported, method) {
+				continue
+			}
+			resp, err := oauthex.RegisterClient(ctx, m.RegistrationEndpoint, &oauthex.ClientRegistrationMetadata{
+				RedirectURIs:            redirectURIs,
+				TokenEndpointAuthMethod: method,
+				GrantTypes:              grants,
+				ResponseTypes:           []string{"code"},
+				ClientName:              name,
+				ClientURI:               "https://github.com/kOlapsis/jmap-mcp",
+				Scope:                   strings.Join(Scopes(m), " "),
+			}, e.HTTP)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", method, err))
+				continue
+			}
+			if method != "none" && resp.ClientSecret == "" {
+				errs = append(errs, fmt.Errorf("%s: no client secret issued", method))
+				continue
+			}
+			return &Registration{ClientID: resp.ClientID, ClientSecret: resp.ClientSecret, AuthMethod: method, RedirectURIs: redirectURIs, GrantTypes: grants}, nil
 		}
-		resp, err := oauthex.RegisterClient(ctx, m.RegistrationEndpoint, &oauthex.ClientRegistrationMetadata{
-			RedirectURIs:            redirectURIs,
-			TokenEndpointAuthMethod: method,
-			GrantTypes:              grants,
-			ResponseTypes:           []string{"code"},
-			ClientName:              name,
-			ClientURI:               "https://github.com/kOlapsis/jmap-mcp",
-			Scope:                   strings.Join(Scopes(m), " "),
-		}, e.HTTP)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("%s: %w", method, err))
-			continue
-		}
-		if method != "none" && resp.ClientSecret == "" {
-			errs = append(errs, fmt.Errorf("%s: no client secret issued", method))
-			continue
-		}
-		return &Registration{ClientID: resp.ClientID, ClientSecret: resp.ClientSecret, AuthMethod: method, RedirectURIs: redirectURIs}, nil
 	}
 	return nil, fmt.Errorf("dynamic client registration refused: %w", errors.Join(errs...))
 }

@@ -11,6 +11,12 @@ All notable changes to this project are documented here. The format follows
 - Optional stateless Streamable HTTP transport for `serve`, enabled with `--stateless` or
   `JMAP_MCP_STATELESS=true`.
 
+### Fixed
+
+- Dynamic client registration with Stalwart 1.x, which refuses the device grant to dynamically
+  registered clients: the local mode registers again without it and then signs in through the
+  browser only.
+
 ## [0.3.0] - 2026-10-24
 
 ### Added

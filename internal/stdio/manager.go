@@ -189,7 +189,7 @@ func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.S
 	if err := m.browser(authURL); err != nil {
 		ln.Close()
 		m.log.Info("could not open a browser", "err", err)
-		if h.Meta.DeviceAuthorizationEndpoint != "" {
+		if deviceFlowAvailable(h) {
 			return m.deviceFlow(ctx, email, srv, h)
 		}
 		return fmt.Sprintf("Open this address in a browser on this computer to sign in to %s, then call list_accounts: %s", email, authURL), nil
@@ -259,9 +259,14 @@ func (m *manager) browserFlow(ctx context.Context, email string, srv *mailauth.S
 	}
 }
 
+// deviceFlowAvailable reports whether the server offers the device flow and registered this client for it.
+func deviceFlowAvailable(h *store.Host) bool {
+	return h.Meta.DeviceAuthorizationEndpoint != "" && (h.Registration == nil || h.Registration.AllowsDevice())
+}
+
 func (m *manager) deviceFlow(ctx context.Context, email string, srv *mailauth.Server, h *store.Host) (string, error) {
-	if h.Meta.DeviceAuthorizationEndpoint == "" {
-		return "", errors.New("the mail server does not support the device flow; retry without device_flow")
+	if !deviceFlowAvailable(h) {
+		return "", errors.New("the mail server does not allow the device flow for this application; retry without device_flow and sign in through a browser")
 	}
 	cfg := mailauth.Config(h.Meta, h.Registration, "")
 	da, err := cfg.DeviceAuth(m.env.Context(ctx))
