@@ -207,16 +207,22 @@ func (s *Server) lookupClient(ctx context.Context, id string) (*store.Client, er
 		ClientName   string   `json:"client_name"`
 		RedirectURIs []string `json:"redirect_uris"`
 		AuthMethod   string   `json:"token_endpoint_auth_method"`
+		AuthMethods  []string `json:"token_endpoint_auth_methods_supported"`
 	}
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 5<<10)).Decode(&doc); err != nil {
 		return nil, fmt.Errorf("client metadata document: %w", err)
 	}
-	if doc.ClientID != id || len(doc.RedirectURIs) == 0 || len(doc.RedirectURIs) > 10 || (doc.AuthMethod != "" && doc.AuthMethod != "none") {
+	if doc.ClientID != id || len(doc.RedirectURIs) == 0 || len(doc.RedirectURIs) > 10 || !acceptsPublicClient(doc.AuthMethod, doc.AuthMethods) {
 		return nil, errors.New("client metadata document: client_id mismatch, no redirect_uris or unsupported authentication")
 	}
 	for _, u := range doc.RedirectURIs {
 		if !validRedirectURI(u) {
 			return nil, errors.New("client metadata document: invalid redirect URI")
+		}
+		// A client that prefers a key must not be served as a public client on a loopback redirect:
+		// any local program could receive the code there and redeem it with its own PKCE verifier.
+		if doc.AuthMethod != "" && doc.AuthMethod != "none" && isLoopbackRedirect(u) {
+			return nil, errors.New("client metadata document: loopback redirect for a client that prefers key authentication")
 		}
 	}
 	cl := &store.Client{ClientID: id, ClientName: truncate(doc.ClientName, 200), RedirectURIs: doc.RedirectURIs, AuthMethod: "none"}
@@ -227,6 +233,19 @@ func (s *Server) lookupClient(ctx context.Context, id string) (*store.Client, er
 	s.cimd[id] = cachedClient{client: cl, expires: time.Now().Add(10 * time.Minute)}
 	s.mu.Unlock()
 	return cl, nil
+}
+
+// acceptsPublicClient reports whether a client metadata document allows the public-client flow (PKCE, no client
+// authentication), the only one this server offers to such clients. The singular token_endpoint_auth_method is a
+// preference; a document that also lists token_endpoint_auth_methods_supported (MCP SEP-3149, as ChatGPT publishes)
+// may name another preferred method and still accept "none", in which case the client uses "none".
+func acceptsPublicClient(method string, methods []string) bool {
+	return method == "" || method == "none" || slices.Contains(methods, "none")
+}
+
+func isLoopbackRedirect(raw string) bool {
+	u, err := url.Parse(raw)
+	return err == nil && u.Scheme == "http" && isLoopback(u.Hostname())
 }
 
 // pending is an authorization request between /authorize and /callback.
