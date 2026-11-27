@@ -199,3 +199,54 @@ func TestBearerNotSentAcrossHosts(t *testing.T) {
 		t.Fatal("token leaked to another host after a redirect")
 	}
 }
+
+// registrar answers RFC 7591 registrations like Stalwart 1.x: public clients only, never with the device grant.
+func registrar(t *testing.T, refuseDevice bool) (*httptest.Server, *[][]string) {
+	t.Helper()
+	var mu sync.Mutex
+	var seen [][]string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var md struct {
+			GrantTypes []string `json:"grant_types"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&md)
+		mu.Lock()
+		seen = append(seen, md.GrantTypes)
+		mu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		if refuseDevice && strings.Contains(strings.Join(md.GrantTypes, " "), DeviceGrant) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprint(w, `{"error":"invalid_client_metadata","error_description":"The device_code grant is not available to dynamically registered clients."}`)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		b, _ := json.Marshal(map[string]any{"client_id": "swc1.test", "redirect_uris": []string{"http://127.0.0.1/callback"},
+			"grant_types": md.GrantTypes, "token_endpoint_auth_method": "none"})
+		_, _ = w.Write(b)
+	}))
+	t.Cleanup(srv.Close)
+	return srv, &seen
+}
+
+func TestRegisterRetriesWithoutDeviceGrant(t *testing.T) {
+	env := NewEnv(netguard.Options{AllowPrivate: true, AllowHTTP: true})
+	for _, refuse := range []bool{true, false} {
+		srv, seen := registrar(t, refuse)
+		meta := &Meta{Issuer: srv.URL, RegistrationEndpoint: srv.URL + "/register", DeviceAuthorizationEndpoint: srv.URL + "/device"}
+		reg, err := env.Register(context.Background(), meta, "test", []string{"http://127.0.0.1/callback"}, false)
+		if err != nil {
+			t.Fatalf("refuse=%v: %v", refuse, err)
+		}
+		if reg.AllowsDevice() == refuse || len(*seen) != map[bool]int{true: 2, false: 1}[refuse] {
+			t.Fatalf("refuse=%v: grants %v after %v; AllowsDevice=%v", refuse, reg.GrantTypes, *seen, reg.AllowsDevice())
+		}
+	}
+	srv, seen := registrar(t, true)
+	meta := &Meta{Issuer: srv.URL, RegistrationEndpoint: srv.URL + "/register"}
+	if _, err := env.Register(context.Background(), meta, "test", []string{"http://127.0.0.1/callback"}, false); err != nil || len(*seen) != 1 {
+		t.Fatalf("without a device endpoint the device grant is never requested: %v %v", err, *seen)
+	}
+	if !(&Registration{}).AllowsDevice() {
+		t.Fatal("static clients and older records keep the device flow")
+	}
+}
