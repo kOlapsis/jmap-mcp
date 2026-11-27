@@ -28,6 +28,9 @@ import (
 
 const clientRedirect = "http://127.0.0.1:9999/cb"
 
+// webClientRedirect is the redirect of a hosted client such as ChatGPT; the tests never fetch it.
+const webClientRedirect = "https://assistant.example/oauth/callback"
+
 type bridge struct {
 	srv  *Server
 	http *httptest.Server
@@ -88,7 +91,7 @@ func (b *bridge) authorizeWith(authURL, email string, login func(string) (string
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		loc := resp.Header.Get("Location")
-		if strings.HasPrefix(loc, clientRedirect) {
+		if strings.HasPrefix(loc, clientRedirect) || strings.HasPrefix(loc, webClientRedirect) {
 			u, _ := url.Parse(loc)
 			return u.Query(), nil
 		}
@@ -206,12 +209,20 @@ type oauthClient struct {
 	b        *bridge
 	id       string
 	verifier string
+	redirect string // clientRedirect when empty
+}
+
+func (c *oauthClient) redirectURI() string {
+	if c.redirect == "" {
+		return clientRedirect
+	}
+	return c.redirect
 }
 
 func (c *oauthClient) authURL(extra url.Values) string {
 	verifier, challenge := pkce()
 	c.verifier = verifier
-	q := url.Values{"response_type": {"code"}, "client_id": {c.id}, "redirect_uri": {clientRedirect}, "state": {"xyz"},
+	q := url.Values{"response_type": {"code"}, "client_id": {c.id}, "redirect_uri": {c.redirectURI()}, "state": {"xyz"},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"}, "resource": {c.b.http.URL + "/mcp"}}
 	for k, v := range extra {
 		q[k] = v
@@ -245,7 +256,7 @@ func (c *oauthClient) login(t *testing.T) map[string]any {
 	if q.Get("state") != "xyz" || q.Get("iss") != c.b.http.URL || q.Get("code") == "" {
 		t.Fatalf("authorization response: %v", q)
 	}
-	status, tok := c.token(url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {clientRedirect}, "code_verifier": {c.verifier}})
+	status, tok := c.token(url.Values{"grant_type": {"authorization_code"}, "code": {q.Get("code")}, "redirect_uri": {c.redirectURI()}, "code_verifier": {c.verifier}})
 	if status != http.StatusOK {
 		t.Fatalf("token: %d %v", status, tok)
 	}
@@ -411,6 +422,71 @@ func TestClientIDMetadataDocument(t *testing.T) {
 	}
 	if tok := c.login(t); tok["access_token"] == nil {
 		t.Fatal("no token for a CIMD client")
+	}
+}
+
+// TestClientIDMetadataDocumentAuthMethods covers documents that prefer another token endpoint authentication
+// method, as ChatGPT's https://chatgpt.com/oauth/client.json does (MCP SEP-3149): they are served as public
+// clients when they also list "none".
+func TestClientIDMetadataDocumentAuthMethods(t *testing.T) {
+	const id = "https://client.example/oauth/client.json"
+	chatgpt := func(redirect string) map[string]any {
+		return map[string]any{
+			"client_id": id, "client_name": "ChatGPT", "redirect_uris": []string{redirect},
+			"token_endpoint_auth_method":            "private_key_jwt",
+			"token_endpoint_auth_methods_supported": []string{"none", "private_key_jwt"},
+			"grant_types":                           []string{"authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer"},
+			"response_types":                        []string{"code"}, "token_endpoint_auth_signing_alg": "RS256",
+			"jwks_uri": "https://client.example/oauth/jwks.json",
+		}
+	}
+	keyOnly := chatgpt(webClientRedirect)
+	delete(keyOnly, "token_endpoint_auth_methods_supported")
+	noPublic := chatgpt(webClientRedirect)
+	noPublic["token_endpoint_auth_methods_supported"] = []string{"private_key_jwt"}
+	cases := []struct {
+		name     string
+		doc      map[string]any
+		redirect string
+		accepted bool
+	}{
+		{"prefers a key, accepts none", chatgpt(webClientRedirect), webClientRedirect, true},
+		{"prefers a key, accepts none, loopback redirect", chatgpt(clientRedirect), clientRedirect, false},
+		{"key only, no list", keyOnly, webClientRedirect, false},
+		{"list without none", noPublic, webClientRedirect, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mail := newFakeMail(t)
+			doc := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = json.NewEncoder(w).Encode(tc.doc)
+			}))
+			defer doc.Close()
+			resolve := mailResolve(mail)
+			du, _ := url.Parse(doc.URL)
+			resolve["client.example:443"] = du.Host
+			b := newBridge(t, resolve)
+			c := &oauthClient{b: b, id: id, redirect: tc.redirect}
+			if !tc.accepted {
+				resp, err := http.Get(c.authURL(nil))
+				if err != nil {
+					t.Fatal(err)
+				}
+				page, _ := io.ReadAll(resp.Body)
+				resp.Body.Close()
+				if resp.StatusCode != http.StatusBadRequest || !strings.Contains(string(page), "Unknown application") {
+					t.Fatalf("document must be refused, got HTTP %d: %s", resp.StatusCode, page)
+				}
+				return
+			}
+			tok := c.login(t)
+			if tok["access_token"] == nil {
+				t.Fatal("no token for a client preferring key authentication but accepting none")
+			}
+			if status, _ := c.token(url.Values{"grant_type": {"refresh_token"}, "refresh_token": {tok["refresh_token"].(string)}}); status != http.StatusOK {
+				t.Fatalf("refresh without client authentication: HTTP %d", status)
+			}
+		})
 	}
 }
 
